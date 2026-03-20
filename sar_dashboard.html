@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SAR 2019–2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:    #050E1A; --bg2:   #091525; --card:  #0D1E30; --card2: #112540;
+  --border:rgba(0,180,160,0.12);
+  --teal:  #00B4A0; --teal2: #00D4BC; --cyan:  #22C5DC;
+  --amber: #F5A623; --rose:  #F05060; --violet:#7B83E8;
+  --green: #4CAF7D; --text:  #D8E4F0; --muted: #6A8099;
+  --font:  'Syne', sans-serif; --mono:  'IBM Plex Mono', monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);
+  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;box-shadow:0 4px 32px rgba(0,0,0,0.5)}
+.header-left{display:flex;align-items:center;gap:14px}
+.badge{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#000;font-weight:800;
+  font-size:12px;padding:5px 12px;border-radius:5px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono)}
+.header-title h1{font-size:17px;font-weight:700;color:#fff}
+.header-title p{font-size:11px;color:var(--muted);margin-top:2px}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--teal);
+  margin-right:5px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.header-right{text-align:right;font-size:11px;color:var(--muted)}
+.header-right strong{display:block;color:var(--text);font-size:13px;font-weight:700;margin-bottom:2px}
+.header-right a{color:var(--teal);text-decoration:none}
+.clock{font-family:var(--mono);font-size:13px;color:var(--teal2);margin-top:3px}
+
+/* YEAR SELECTOR BAR */
+.year-bar{background:var(--bg2);border-bottom:1px solid var(--border);
+  padding:8px 28px;display:flex;align-items:center;gap:8px}
+.year-label{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1.5px;margin-right:4px}
+.ybtn{padding:5px 14px;border-radius:5px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--mono);
+  letter-spacing:0.5px;transition:all 0.15s}
+.ybtn:hover{border-color:var(--cyan);color:var(--cyan)}
+.ybtn.active{background:rgba(0,180,160,0.15);border-color:var(--teal);color:var(--teal2)}
+.ybtn.all{background:rgba(123,131,232,0.12);border-color:var(--violet);color:#A0A8FF}
+.ybtn.all.active{background:rgba(123,131,232,0.25);border-color:var(--violet);color:#c0c8ff}
+
+/* TABS */
+.tab-bar{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 28px;display:flex;gap:2px;overflow-x:auto}
+.tab{padding:10px 18px;font-size:10px;font-weight:600;color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;transition:all 0.2s;white-space:nowrap;letter-spacing:1px;
+  text-transform:uppercase;font-family:var(--mono)}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+
+/* CONTENT */
+.content{padding:22px 28px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* SECTION LABEL */
+.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2.5px;
+  color:var(--teal);margin-bottom:14px;display:flex;align-items:center;gap:10px;font-family:var(--mono)}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
+.kpi-grid-5{grid-template-columns:repeat(5,1fr)}
+.kpi-grid-7{grid-template-columns:repeat(7,1fr)}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:16px 18px;position:relative;overflow:hidden;transition:transform 0.2s,box-shadow 0.2s;
+  animation:fadeUp 0.4s ease both}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.kpi-card.teal::before{background:linear-gradient(90deg,var(--teal),var(--cyan))}
+.kpi-card.amber::before{background:linear-gradient(90deg,var(--amber),#D4880A)}
+.kpi-card.rose::before{background:linear-gradient(90deg,var(--rose),#A0102A)}
+.kpi-card.violet::before{background:linear-gradient(90deg,var(--violet),#3945C0)}
+.kpi-card.green::before{background:linear-gradient(90deg,var(--green),#2A7D50)}
+.kpi-card.gray::before{background:#3A4A5A}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.kpi-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--muted);margin-bottom:8px;font-family:var(--mono)}
+.kpi-value{font-size:30px;font-weight:700;line-height:1;font-family:var(--mono);color:#fff}
+.kpi-value.teal{color:var(--teal2)} .kpi-value.amber{color:var(--amber)}
+.kpi-value.rose{color:#FF7080} .kpi-value.violet{color:#A0A8FF} .kpi-value.green{color:var(--green)}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:5px;line-height:1.4}
+.trend-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10px;font-family:var(--mono);font-weight:600;margin-left:6px}
+.trend-up{background:rgba(76,175,125,0.15);color:var(--green)}
+.trend-dn{background:rgba(240,80,96,0.15);color:#FF7080}
+
+/* CHART CARDS */
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:22px}
+.grid-2-eq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:22px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:18px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:14px}
+.chart-body{position:relative}
+
+/* MONTH TABS */
+.month-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px}
+.mbtn{padding:4px 12px;border-radius:5px;border:1px solid var(--border);background:transparent;
+  color:var(--muted);font-size:10px;font-weight:600;cursor:pointer;font-family:var(--mono);
+  text-transform:uppercase;letter-spacing:0.8px;transition:all 0.15s}
+.mbtn:hover{border-color:var(--teal);color:var(--teal)}
+.mbtn.active{background:rgba(0,180,160,0.12);border-color:var(--teal);color:var(--teal)}
+
+/* ALERT CARDS */
+.alert-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px}
+.alert-card{border-radius:8px;padding:13px 16px;display:flex;align-items:flex-start;gap:10px}
+.alert-card.warning{background:rgba(245,166,35,0.08);border:1px solid rgba(245,166,35,0.2)}
+.alert-card.danger{background:rgba(240,80,96,0.08);border:1px solid rgba(240,80,96,0.2)}
+.alert-card.info{background:rgba(34,197,220,0.08);border:1px solid rgba(34,197,220,0.2)}
+.alert-card.success{background:rgba(76,175,125,0.08);border:1px solid rgba(76,175,125,0.2)}
+.alert-icon{font-size:18px;line-height:1;margin-top:1px}
+.alert-title{font-size:12px;font-weight:700;color:#fff;margin-bottom:3px}
+.alert-desc{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* TABLA */
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--muted);padding:9px 12px;border-bottom:1px solid var(--border);font-family:var(--mono)}
+.data-table td{padding:8px 12px;border-bottom:1px solid rgba(255,255,255,0.03);color:var(--text)}
+.data-table tr:hover td{background:rgba(255,255,255,0.015)}
+.data-table td:not(:first-child),.data-table th:not(:first-child){font-family:var(--mono);font-size:11px;text-align:right}
+.bar-mini{display:inline-block;height:3px;border-radius:2px;vertical-align:middle;margin-left:8px;background:var(--teal);opacity:0.5}
+
+/* BAR LEGEND */
+.bar-legend{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.bar-name{font-size:11px;color:var(--text);flex:1}
+.bar-track{flex:2;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden}
+.bar-fill{height:100%;border-radius:2px}
+.bar-val{font-family:var(--mono);font-size:11px;color:var(--muted);width:50px;text-align:right}
+
+/* RESPONSIVE */
+@media(max-width:1200px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .kpi-grid-5,.kpi-grid-7{grid-template-columns:repeat(3,1fr)}
+  .grid-2,.grid-2-eq,.grid-3{grid-template-columns:1fr}
+  .alert-grid{grid-template-columns:1fr}
+}
+.footer{text-align:center;padding:16px;border-top:1px solid var(--border);
+  font-size:11px;color:var(--muted);margin-top:8px;font-family:var(--mono)}
+.footer a{color:var(--teal);text-decoration:none}
+
+/* YEAR CONTEXT BADGE */
+.year-context{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;
+  border-radius:4px;font-family:var(--mono);font-size:11px;font-weight:700;
+  background:rgba(0,180,160,0.15);border:1px solid rgba(0,180,160,0.3);color:var(--teal2)}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <div class="badge">SAR</div>
+    <div class="header-title">
+      <h1>Dashboard de Monitoreo · 2019–2025</h1>
+      <p><span class="live-dot"></span>Servicio de Atención Urgencia Rural — Histórico 7 años</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <strong>Rodrigo Villalobos R.</strong>
+    <a href="mailto:rvillalobos@ssuble.cl">rvillalobos@ssuble.cl</a>
+    <div class="clock" id="clock">—</div>
+  </div>
+</div>
+
+<!-- YEAR SELECTOR -->
+<div class="year-bar">
+  <span class="year-label">Año:</span>
+  <button class="ybtn" onclick="setYear('2019',this)">2019</button>
+  <button class="ybtn" onclick="setYear('2020',this)">2020</button>
+  <button class="ybtn" onclick="setYear('2021',this)">2021</button>
+  <button class="ybtn" onclick="setYear('2022',this)">2022</button>
+  <button class="ybtn" onclick="setYear('2023',this)">2023</button>
+  <button class="ybtn" onclick="setYear('2024',this)">2024</button>
+  <button class="ybtn active" onclick="setYear('2025',this)">2025</button>
+  <button class="ybtn all" onclick="setYear('ALL',this)">Histórico</button>
+</div>
+
+<!-- TAB BAR -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab(this,'resumen')">Resumen</div>
+  <div class="tab"        onclick="switchTab(this,'historico')">Histórico</div>
+  <div class="tab"        onclick="switchTab(this,'demanda')">Demanda Horaria</div>
+  <div class="tab"        onclick="switchTab(this,'triage')">Triage & Derivaciones</div>
+  <div class="tab"        onclick="switchTab(this,'poblacion')">Población</div>
+  <div class="tab"        onclick="switchTab(this,'centros')">Centros de Salud</div>
+</div>
+
+<div class="content">
+
+<!-- ═══════ RESUMEN ═══════ -->
+<div class="tab-panel active" id="tab-resumen">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <div class="section-label" style="margin-bottom:0;flex:1">Indicadores Clave</div>
+    <div class="year-context" id="yearContextBadge">2025</div>
+  </div>
+
+  <div class="kpi-grid" id="resumenKpis">
+    <div class="kpi-card teal"><div class="kpi-label">Total Inscritos</div>
+      <div class="kpi-value teal" id="kpiI">—</div><div class="kpi-sub" id="kpiIsub">—</div></div>
+    <div class="kpi-card green"><div class="kpi-label">Total Atendidos</div>
+      <div class="kpi-value green" id="kpiA">—</div><div class="kpi-sub" id="kpiAsub">—</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">NSP Acumulado</div>
+      <div class="kpi-value amber" id="kpiN">—</div><div class="kpi-sub" id="kpiNsub">—</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Derivados UEH</div>
+      <div class="kpi-value rose" id="kpiD">—</div><div class="kpi-sub" id="kpiDsub">—</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Evolución Mensual</div>
+      <div class="chart-sub">Inscritos vs Atendidos vs NSP</div>
+      <div class="chart-body" style="height:240px"><canvas id="monthlyChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Rendimiento Mensual</div>
+      <div class="chart-sub">% Atendidos / Inscritos</div>
+      <div class="chart-body" style="height:240px"><canvas id="rendimChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="chart-card">
+      <div class="chart-title">Triage Anual</div>
+      <div class="chart-sub">Distribución acumulada</div>
+      <div class="chart-body" style="height:190px"><canvas id="triagePieResumen"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">NSP por Tipo</div>
+      <div class="chart-sub">Pediátrico vs Adulto</div>
+      <div class="chart-body" style="height:190px"><canvas id="nspChartResumen"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">SAMU & Derivaciones</div>
+      <div class="chart-sub">Llegadas SAMU y envíos a UEH</div>
+      <div class="chart-body" style="height:190px"><canvas id="samuChartResumen"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ HISTÓRICO ═══════ -->
+<div class="tab-panel" id="tab-historico">
+  <div class="section-label">Comparativo Histórico 2019–2025</div>
+
+  <div class="kpi-grid kpi-grid-7">
+    <div class="kpi-card teal" id="hist_2019"><div class="kpi-label">2019</div>
+      <div class="kpi-value teal" style="font-size:22px">65.338</div><div class="kpi-sub">Atendidos · 91.1% rend.</div></div>
+    <div class="kpi-card teal" id="hist_2020"><div class="kpi-label">2020</div>
+      <div class="kpi-value teal" style="font-size:22px">41.150</div><div class="kpi-sub">Atendidos · 93.5% rend.</div></div>
+    <div class="kpi-card teal" id="hist_2021"><div class="kpi-label">2021</div>
+      <div class="kpi-value teal" style="font-size:22px">48.407</div><div class="kpi-sub">Atendidos · 95.1% rend.</div></div>
+    <div class="kpi-card teal" id="hist_2022"><div class="kpi-label">2022</div>
+      <div class="kpi-value teal" style="font-size:22px">79.659</div><div class="kpi-sub">Atendidos · 90.9% rend.</div></div>
+    <div class="kpi-card teal" id="hist_2023"><div class="kpi-label">2023</div>
+      <div class="kpi-value teal" style="font-size:22px">74.324</div><div class="kpi-sub">Atendidos · 88.2% rend.</div></div>
+    <div class="kpi-card teal" id="hist_2024"><div class="kpi-label">2024</div>
+      <div class="kpi-value teal" style="font-size:22px">53.473</div><div class="kpi-sub">Atendidos · 91.6% rend.</div></div>
+    <div class="kpi-card green" id="hist_2025"><div class="kpi-label">2025</div>
+      <div class="kpi-value green" style="font-size:22px">48.556</div><div class="kpi-sub">Atendidos · 93.7% rend.</div></div>
+  </div>
+
+  <div class="grid-2-eq">
+    <div class="chart-card">
+      <div class="chart-title">Atendidos por Año</div>
+      <div class="chart-sub">Evolución anual 2019–2025</div>
+      <div class="chart-body" style="height:260px"><canvas id="histAtendChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Inscritos vs Atendidos</div>
+      <div class="chart-sub">Brecha anual (NSP implícito)</div>
+      <div class="chart-body" style="height:260px"><canvas id="histInscAtendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="chart-card">
+      <div class="chart-title">Rendimiento Anual</div>
+      <div class="chart-sub">% Atendidos / Inscritos por año</div>
+      <div class="chart-body" style="height:200px"><canvas id="histRendimChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">NSP Histórico</div>
+      <div class="chart-sub">No Show acumulado por año</div>
+      <div class="chart-body" style="height:200px"><canvas id="histNspChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Derivaciones a UEH</div>
+      <div class="chart-sub">Derivados anuales al hospital</div>
+      <div class="chart-body" style="height:200px"><canvas id="histDerivChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-2-eq">
+    <div class="chart-card">
+      <div class="chart-title">Triage C4 Histórico</div>
+      <div class="chart-sub">Semi-urgencia acumulada por año</div>
+      <div class="chart-body" style="height:230px"><canvas id="histTri4Chart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Evolución Mensual Comparada</div>
+      <div class="chart-sub">Atendidos por mes — todos los años</div>
+      <div class="chart-body" style="height:230px"><canvas id="histMesChart"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ DEMANDA HORARIA ═══════ -->
+<div class="tab-panel" id="tab-demanda">
+  <div class="section-label">Distribución Horaria</div>
+  <div class="kpi-grid">
+    <div class="kpi-card teal"><div class="kpi-label">Total Atendidos</div>
+      <div class="kpi-value teal" id="kpiDemTotal">—</div><div class="kpi-sub" id="kpiDemSub">—</div></div>
+    <div class="kpi-card violet"><div class="kpi-label">Turno SAR (17–07h)</div>
+      <div class="kpi-value violet" id="kpiSarT">—</div><div class="kpi-sub">Horario SAR nocturno</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Turno Diurno (08–16h)</div>
+      <div class="kpi-value amber" id="kpiDiuT">—</div><div class="kpi-sub">Horario diurno</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Hora Pico</div>
+      <div class="kpi-value rose" id="kpiHPico">—</div><div class="kpi-sub" id="kpiHPicoSub">—</div></div>
+  </div>
+
+  <div class="month-tabs" id="hourlyMonthTabs">
+    <button class="mbtn active" onclick="updateHourly('ENERO',this)">Ene</button>
+    <button class="mbtn" onclick="updateHourly('FEBRERO',this)">Feb</button>
+    <button class="mbtn" onclick="updateHourly('MARZO',this)">Mar</button>
+    <button class="mbtn" onclick="updateHourly('ABRIL',this)">Abr</button>
+    <button class="mbtn" onclick="updateHourly('MAYO',this)">May</button>
+    <button class="mbtn" onclick="updateHourly('JUNIO',this)">Jun</button>
+    <button class="mbtn" onclick="updateHourly('JULIO',this)">Jul</button>
+    <button class="mbtn" onclick="updateHourly('AGOSTO',this)">Ago</button>
+    <button class="mbtn" onclick="updateHourly('SEPTIEMBRE',this)">Sep</button>
+    <button class="mbtn" onclick="updateHourly('OCTUBRE',this)">Oct</button>
+    <button class="mbtn" onclick="updateHourly('NOVIEMBRE',this)">Nov</button>
+    <button class="mbtn" onclick="updateHourly('DICIEMBRE',this)">Dic</button>
+    <button class="mbtn" onclick="updateHourly('ANUAL',this)">Promedio</button>
+  </div>
+
+  <div class="chart-card" style="margin-bottom:18px">
+    <div class="chart-title" id="hourlyTitle">—</div>
+    <div class="chart-sub">Horario SAR desde 17:00. <span style="color:var(--teal)">■</span> SAR nocturno &nbsp; <span style="color:var(--violet)">■</span> Diurno</div>
+    <div class="chart-body" style="height:290px"><canvas id="hourlyChart"></canvas></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Diurno vs SAR por Mes</div>
+      <div class="chart-sub">08:00–16:59 vs 17:00–07:59</div>
+      <div class="chart-body" style="height:240px"><canvas id="diurnoSarChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Top 5 Horas con Mayor Demanda</div>
+      <div class="chart-sub" id="topHorasSubtitle">Acumulado anual</div>
+      <div id="topHorasLegend" class="bar-legend" style="margin-top:16px;padding:4px 0"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════ TRIAGE ═══════ -->
+<div class="tab-panel" id="tab-triage">
+  <div class="section-label">Categorización Triage</div>
+  <div class="kpi-grid kpi-grid-5">
+    <div class="kpi-card gray"><div class="kpi-label">C1 — Crítico</div>
+      <div class="kpi-value" id="tc1">—</div><div class="kpi-sub" id="tc1p">—</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">C2 — Emergencia</div>
+      <div class="kpi-value rose" id="tc2">—</div><div class="kpi-sub" id="tc2p">—</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">C3 — Urgencia</div>
+      <div class="kpi-value amber" id="tc3">—</div><div class="kpi-sub" id="tc3p">—</div></div>
+    <div class="kpi-card teal"><div class="kpi-label">C4 — Semi-urgencia</div>
+      <div class="kpi-value teal" id="tc4">—</div><div class="kpi-sub" id="tc4p">—</div></div>
+    <div class="kpi-card violet"><div class="kpi-label">C5 — No urgente</div>
+      <div class="kpi-value violet" id="tc5">—</div><div class="kpi-sub" id="tc5p">—</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="chart-card">
+      <div class="chart-title">Triage por Mes</div>
+      <div class="chart-sub">Distribución C2–C5 mensual</div>
+      <div class="chart-body" style="height:280px"><canvas id="triageMesChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Distribución Triage</div>
+      <div class="chart-sub">Proporción acumulada del año</div>
+      <div class="chart-body" style="height:180px"><canvas id="triageDonutChart"></canvas></div>
+      <div id="triageLegend" class="bar-legend" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <div class="section-label">Motivos de Consulta Destacados</div>
+  <div class="chart-card">
+    <div class="chart-title">Top Motivos de Consulta por Mes</div>
+    <div class="chart-sub">Respiratorio · Constatación de Lesiones · Alcoholemias · Mordedura de Perro · Acc. en el Hogar</div>
+    <div class="chart-body" style="height:240px"><canvas id="motivosChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════ POBLACIÓN ═══════ -->
+<div class="tab-panel" id="tab-poblacion">
+  <div class="section-label">Población Atendida</div>
+  <div class="kpi-grid">
+    <div class="kpi-card teal"><div class="kpi-label">Total Atendidos</div>
+      <div class="kpi-value teal" id="kpiPobT">—</div><div class="kpi-sub">—</div></div>
+    <div class="kpi-card violet"><div class="kpi-label">Adultos (≥15 años)</div>
+      <div class="kpi-value violet" id="kpiAdult">—</div><div class="kpi-sub" id="kpiAdultP">—</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Pediátrico (&lt;15 años)</div>
+      <div class="kpi-value amber" id="kpiPedt">—</div><div class="kpi-sub" id="kpiPedtP">—</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Grupo más frecuente</div>
+      <div class="kpi-value rose" style="font-size:20px" id="kpiGrupo">—</div>
+      <div class="kpi-sub" id="kpiGrupoS">—</div></div>
+  </div>
+
+  <div class="grid-2-eq" style="margin-bottom:16px">
+    <div class="chart-card">
+      <div class="chart-title">Pirámide Etaria</div>
+      <div class="chart-sub">Mes seleccionado</div>
+      <div class="month-tabs" id="ageMonthTabs">
+        <button class="mbtn active" onclick="updateAge('ENERO',this)">Ene</button>
+        <button class="mbtn" onclick="updateAge('FEBRERO',this)">Feb</button>
+        <button class="mbtn" onclick="updateAge('MARZO',this)">Mar</button>
+        <button class="mbtn" onclick="updateAge('ABRIL',this)">Abr</button>
+        <button class="mbtn" onclick="updateAge('MAYO',this)">May</button>
+        <button class="mbtn" onclick="updateAge('JUNIO',this)">Jun</button>
+        <button class="mbtn" onclick="updateAge('JULIO',this)">Jul</button>
+        <button class="mbtn" onclick="updateAge('AGOSTO',this)">Ago</button>
+        <button class="mbtn" onclick="updateAge('SEPTIEMBRE',this)">Sep</button>
+        <button class="mbtn" onclick="updateAge('OCTUBRE',this)">Oct</button>
+        <button class="mbtn" onclick="updateAge('NOVIEMBRE',this)">Nov</button>
+        <button class="mbtn" onclick="updateAge('DICIEMBRE',this)">Dic</button>
+      </div>
+      <div class="chart-body" style="height:300px"><canvas id="ageBarChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Pediátrico vs Adulto por Mes</div>
+      <div class="chart-sub">Evolución mensual</div>
+      <div class="chart-body" style="height:350px"><canvas id="pedAdultoChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-title">Acumulado Anual por Grupo Etario</div>
+    <div class="chart-sub">Distribución acumulada del año seleccionado</div>
+    <div class="chart-body" style="height:240px"><canvas id="ageAnualChart"></canvas></div>
+  </div>
+</div>
+
+<!-- ═══════ CENTROS ═══════ -->
+<div class="tab-panel" id="tab-centros">
+  <div class="section-label">Centros de Salud de Origen</div>
+  <div class="kpi-grid">
+    <div class="kpi-card teal"><div class="kpi-label">Total Atendidos</div>
+      <div class="kpi-value teal" id="kpiCentT">—</div><div class="kpi-sub">Todos los centros</div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Centro Líder</div>
+      <div class="kpi-value amber" style="font-size:16px;padding-top:6px">San Ramón</div>
+      <div class="kpi-sub" id="kpiSanR">—</div></div>
+    <div class="kpi-card violet"><div class="kpi-label">2° Centro (V. Parra)</div>
+      <div class="kpi-value violet" id="kpiViolP">—</div><div class="kpi-sub" id="kpiViolPct">—</div></div>
+    <div class="kpi-card rose"><div class="kpi-label">Sin Centro / Otros</div>
+      <div class="kpi-value rose" id="kpiSinC">—</div><div class="kpi-sub">Sin inscripción o fuera de red</div></div>
+  </div>
+
+  <div class="grid-2-eq">
+    <div class="chart-card">
+      <div class="chart-title">Distribución por Centro</div>
+      <div class="chart-sub">Acumulado anual</div>
+      <div class="chart-body" style="height:300px"><canvas id="centroDonut"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Evolución Top 4 Centros</div>
+      <div class="chart-sub">Comparativo mensual</div>
+      <div class="chart-body" style="height:300px"><canvas id="centroMesChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-label" style="margin-top:4px">Tabla de Centros — Año Seleccionado</div>
+  <div class="chart-card">
+    <table class="data-table">
+      <thead><tr>
+        <th>Centro de Salud</th>
+        <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
+        <th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+        <th>Total</th><th>%</th>
+      </tr></thead>
+      <tbody id="centrosTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div><!-- /content -->
+<div class="footer">
+  Autor: <strong>Rodrigo Villalobos R.</strong> · <a href="mailto:rvillalobos@ssuble.cl">rvillalobos@ssuble.cl</a> ·
+  <span id="footerDate"></span>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  DATOS COMPLETOS 2019–2025
+// ══════════════════════════════════════════
+const ALL = {
+  '2019': {"inscritos":[6497,6132,6462,5999,7140,7071,6036,7067,6581,6382,6565,5781],"atendidos":[5938,5618,5739,5471,6562,6390,5519,6410,5835,5838,5804,5214],"nsp":[559,514,723,528,578,681,517,657,746,544,761,569],"nspPed":[108,91,132,82,95,113,85,107,121,90,126,95],"nspAdul":[451,423,591,446,483,568,432,550,625,454,635,474],"samu":[33,31,29,22,18,16,15,18,20,16,14,8],"derivados":[193,179,218,190,157,150,175,191,173,186,152,151],"triageC1":[1,1,0,0,1,0,1,1,1,0,1,1],"triageC2":[52,54,50,43,44,49,41,42,57,47,42,39],"triageC3":[491,467,524,465,523,479,430,524,537,496,442,406],"triageC4":[4687,4375,4545,4321,5264,5139,4390,5077,4601,4627,4614,4119],"triageC5":[707,721,620,642,730,723,657,766,639,668,705,649],"motivosResp":[529,391,537,469,537,611,516,645,664,526,568,463],"motivosLes":[172,166,204,191,218,195,195,208,186,204,222,181],"motivosHogar":[47,36,57,41,60,72,65,59,62,62,69,47],"motivosAlc":[20,12,22,23,18,12,12,20,23,21,18,18],"motivosPerro":[29,33,36,55,72,79,55,57,58,41,34,27],"hourly":{"ENERO":[37,62,85,210,231,185,205,229,233,454,577,572,579,564,421,375,257,231,164,109,45,34,40,39],"FEBRERO":[32,48,74,181,202,172,188,219,199,408,545,542,545,531,395,344,237,220,148,92,40,27,40,31],"MARZO":[47,69,87,214,221,176,192,237,205,426,567,571,541,526,424,338,253,225,146,80,44,26,45,28],"ABRIL":[35,52,78,196,212,165,180,209,182,380,533,523,513,487,379,310,220,194,133,79,42,21,38,30],"MAYO":[53,82,105,256,269,218,226,249,251,485,623,614,607,578,456,404,277,247,159,90,47,29,48,25],"JUNIO":[41,70,90,218,248,196,211,236,226,438,591,580,590,559,415,384,253,229,141,84,44,26,39,31],"JULIO":[38,56,78,184,208,172,188,213,194,390,519,516,531,497,374,333,230,206,138,77,37,23,31,26],"AGOSTO":[45,72,102,244,272,219,227,265,240,483,603,598,607,580,444,393,264,234,163,90,43,31,47,34],"SEPTIEMBRE":[38,55,82,213,234,181,197,230,208,420,553,547,548,519,399,355,235,216,138,76,40,25,39,28],"OCTUBRE":[43,68,88,216,237,190,205,243,225,440,562,560,567,536,406,363,244,220,150,79,42,27,41,28],"NOVIEMBRE":[40,63,80,195,218,175,189,221,210,403,529,524,539,514,384,341,229,205,143,76,37,24,38,25],"DICIEMBRE":[32,52,72,178,210,164,185,213,189,367,509,505,508,481,358,307,207,186,118,67,31,23,34,20]},"age":{"ENERO":[38,63,186,338,245,459,643,511,404,374,375,393,388,336,299,266,214,183,223],"FEBRERO":[38,55,145,281,211,380,563,468,359,336,337,362,350,301,281,244,188,162,213],"MARZO":[47,65,185,341,249,441,614,511,406,367,374,398,385,330,302,270,219,182,238],"ABRIL":[35,51,138,277,205,350,568,467,362,327,349,374,363,303,275,244,197,163,199],"MAYO":[54,76,207,392,284,515,743,607,481,441,451,469,463,400,363,315,253,213,286],"JUNIO":[43,68,180,367,259,474,650,550,437,393,407,425,420,364,327,283,226,188,258],"JULHO":[36,55,165,322,228,406,570,480,382,347,359,369,373,321,283,251,202,170,227],"AGOSTO":[49,72,196,384,284,508,660,545,432,390,413,422,417,362,328,282,235,194,257],"SETEMBRO":[40,60,170,340,254,451,628,518,404,365,386,399,397,340,305,261,212,178,227],"OCTUBRE":[44,65,180,347,261,445,611,506,396,361,380,395,393,338,300,264,206,172,241],"NOVIEMBRE":[43,62,179,350,258,442,617,511,400,358,376,394,389,334,302,260,206,170,233],"DICIEMBRE":[34,53,148,285,219,385,540,440,345,311,329,339,338,289,260,223,180,148,198]},"centros":{"Violeta Parra":[1668,1534,1677,1549,1758,1736,1523,1729,1596,1577,1560,1375],"Ultraestación":[396,362,419,375,441,455,384,437,416,409,399,337],"Los Volcanes":[412,384,432,387,473,465,393,461,420,418,403,344],"Isabel Riquelme":[329,299,338,304,383,376,312,375,337,332,320,276],"Sol de Oriente":[373,340,381,345,416,411,347,410,375,369,358,309],"San Ramón Nonato":[1054,966,1030,944,1116,1091,931,1072,1008,988,971,843],"Federico Puga":[246,224,258,230,272,258,218,257,235,232,222,193],"Michelle Bachelet":[171,157,174,156,181,179,149,175,162,162,157,133],"Coihueco":[111,103,116,104,133,126,106,124,116,112,110,94],"Pinto":[84,77,90,80,96,92,80,94,86,84,83,71],"Portezuelo":[18,17,20,17,21,21,17,20,19,18,17,15],"Otros":[221,203,237,213,253,247,210,246,222,219,211,183],"Sin Centro":[855,752,567,367,619,933,849,1010,843,918,993,1051]}},
+  '2020': {"inscritos":[4381,3965,4082,3600,4512,4484,3908,4467,4053,4064,3904,2573],"atendidos":[4102,3744,3839,3377,4235,4222,3672,4195,3812,3833,3671,2448],"nsp":[279,221,243,223,277,262,236,272,241,231,233,125],"nspPed":[31,24,25,22,33,27,24,28,26,24,24,11],"nspAdul":[248,197,218,201,244,235,212,244,215,207,209,114],"samu":[9,12,18,17,16,11,15,14,14,13,10,7],"derivados":[76,44,39,25,41,37,29,43,38,44,37,28],"triageC1":[1,0,1,0,1,0,1,1,0,0,1,0],"triageC2":[32,26,34,28,38,37,29,36,35,35,31,17],"triageC3":[346,317,342,307,397,386,342,384,351,357,333,179],"triageC4":[2815,2535,2639,2336,2959,2955,2573,2968,2665,2698,2565,1678],"triageC5":[908,866,823,706,840,844,727,806,761,743,741,574],"motivosResp":[310,289,340,325,407,409,366,410,378,367,355,220],"motivosLes":[119,97,104,86,114,109,103,110,103,101,99,64],"motivosHogar":[39,32,37,29,41,44,37,43,39,38,35,24],"motivosAlc":[16,10,17,17,18,14,14,18,17,18,16,9],"motivosPerro":[24,21,29,37,54,56,47,49,45,35,28,21],"hourly":{"ENERO":[21,37,62,94,119,97,96,115,113,242,419,441,437,422,310,291,200,178,131,72,33,24,31,17],"FEBRERO":[21,35,51,80,107,88,86,103,98,213,380,394,389,374,278,260,181,160,118,65,29,21,27,14],"MARZO":[22,36,53,82,103,87,86,106,101,220,385,403,401,381,284,263,183,163,120,66,30,22,29,14],"ABRIL":[19,31,48,73,90,76,77,90,86,190,336,352,351,331,250,229,159,143,106,58,26,20,25,13],"MAYO":[26,43,65,103,124,104,103,116,119,275,464,484,479,455,340,317,219,196,145,79,35,27,35,18],"JUNIO":[26,42,65,99,122,103,100,119,117,269,452,469,471,446,335,309,215,191,141,77,35,26,34,18],"JULHO":[23,37,58,88,109,91,90,105,103,236,400,418,417,396,296,276,191,171,126,68,31,23,30,15],"AGOSTO":[26,43,65,100,122,102,102,119,117,265,451,467,467,446,335,309,213,192,140,76,35,26,33,18],"SETEMBRO":[24,39,60,92,109,94,92,108,107,238,405,422,421,401,301,277,194,172,127,69,31,23,31,16],"OCTUBRE":[24,39,61,94,112,95,93,110,108,240,412,426,426,406,305,280,193,174,128,70,31,23,31,16],"NOVIEMBRE":[23,37,57,88,105,89,88,104,101,229,394,410,408,388,291,268,186,166,123,67,30,22,30,15],"DICIEMBRE":[16,25,39,59,68,60,58,68,67,151,259,269,269,255,192,175,121,108,81,44,19,15,19,10]},"age":{"ENERO":[26,24,89,187,152,248,342,295,252,234,252,261,254,217,213,189,155,128,185],"FEBRERO":[21,22,79,169,135,225,310,265,228,211,225,235,228,197,192,170,140,116,167],"MARÇO":[22,23,81,174,141,232,315,274,233,217,232,242,237,203,198,176,145,120,172],"ABRIL":[18,20,71,150,122,200,281,241,207,190,205,213,208,179,175,156,127,106,152],"MAIO":[26,28,102,214,174,284,394,341,291,271,293,304,297,255,250,221,181,150,216],"JUNHO":[25,27,100,208,168,278,386,332,284,266,283,296,289,248,242,216,177,147,212],"JULHO":[22,24,89,183,148,245,342,296,253,235,254,262,257,220,216,190,157,130,187],"AGOSTO":[25,27,100,208,170,279,390,337,287,267,285,298,290,249,244,217,179,148,213],"SETEMBRO":[22,24,91,193,155,256,360,309,265,245,264,273,268,230,225,200,164,136,196],"OCTUBRE":[22,25,92,195,158,259,363,314,267,249,266,277,271,232,227,202,166,137,198],"NOVIEMBRE":[21,23,87,182,149,243,343,295,252,234,250,261,254,219,213,190,156,129,186],"DICIEMBRE":[14,15,57,119,97,158,224,192,165,153,164,171,167,143,140,125,102,85,122]},"centros":{"Violeta Parra":[1480,1357,1405,1248,1547,1539,1360,1560,1413,1417,1348,863],"Ultraestación":[209,190,197,175,219,218,193,220,200,200,192,122],"Los Volcanes":[230,210,217,192,242,241,213,244,221,222,211,135],"Isabel Riquelme":[168,154,160,142,178,178,157,180,163,163,156,100],"Sol de Oriente":[190,174,180,160,202,201,178,205,185,186,177,113],"San Ramón Nonato":[607,556,577,510,640,638,563,647,585,587,558,358],"Federico Puga":[131,119,123,110,138,138,122,140,127,127,121,77],"Michelle Bachelet":[89,81,84,74,94,94,83,95,86,86,82,52],"Coihueco":[66,60,62,55,70,70,62,71,64,64,61,39],"Pinto":[49,45,47,42,53,53,47,54,49,49,47,29],"Portezuelo":[10,10,10,9,11,11,10,11,10,10,10,6],"Outros":[121,111,115,102,128,128,113,130,117,118,112,72],"Sin Centro":[752,683,662,558,713,763,631,838,592,604,596,491]}},
+  '2021': {"inscritos":[4381,3965,4082,3600,4512,4484,3908,4467,4053,4064,3904,2495],"atendidos":[4102,3744,3839,3377,4235,4222,3672,4195,3812,3833,3671,2401],"nsp":[279,221,243,223,277,262,236,272,241,231,233,90],"nspPed":[31,24,25,22,33,27,24,28,26,24,24,9],"nspAdul":[248,197,218,201,244,235,212,244,215,207,209,81],"samu":[9,12,18,17,16,11,15,14,14,13,10,7],"derivados":[76,44,39,25,41,46,80,92,98,92,68,23],"triageC1":[1,0,1,0,1,0,1,1,0,0,1,0],"triageC2":[32,26,34,28,38,37,29,36,35,35,31,17],"triageC3":[346,317,342,307,397,386,342,384,351,357,333,179],"triageC4":[2815,2535,2639,2336,2959,3390,3213,3146,2744,3139,3604,965],"triageC5":[908,866,823,706,840,409,89,628,682,302,302,1240],"motivosResp":[310,289,340,325,407,605,601,702,716,618,649,380],"motivosLes":[119,97,104,86,114,100,92,102,95,97,94,58],"motivosHogar":[39,32,37,29,41,52,47,54,49,48,46,27],"motivosAlc":[16,10,17,17,18,18,18,19,17,18,18,9],"motivosPerro":[24,21,29,37,54,65,52,53,52,39,32,21],"hourly":{"ENERO":[21,37,62,94,119,97,96,115,113,242,419,441,437,422,310,291,200,178,131,72,33,24,31,17],"FEBRERO":[21,35,51,80,107,88,86,103,98,213,380,394,389,374,278,260,181,160,118,65,29,21,27,14],"MARZO":[22,36,53,82,103,87,86,106,101,220,385,403,401,381,284,263,183,163,120,66,30,22,29,14],"ABRIL":[19,31,48,73,90,76,77,90,86,190,336,352,351,331,250,229,159,143,106,58,26,20,25,13],"MAYO":[26,43,65,103,124,104,103,116,119,275,464,484,479,455,340,317,219,196,145,79,35,27,35,18],"JUNIO":[50,78,108,153,151,126,133,157,178,304,461,487,483,447,332,315,222,196,145,80,37,28,37,20],"JULIO":[47,74,103,146,145,120,127,151,171,290,441,467,463,428,318,302,213,188,139,76,35,27,35,19],"AGOSTO":[47,73,101,144,143,119,126,149,169,287,436,461,459,424,315,299,211,186,137,75,35,26,34,19],"SEPTIEMBRE":[42,66,90,128,128,107,112,133,151,255,391,412,411,379,282,267,189,166,123,67,31,23,31,17],"OCTUBRE":[43,67,93,132,132,110,115,137,155,264,402,424,422,388,290,274,193,171,126,69,32,23,31,17],"NOVIEMBRE":[42,66,90,128,128,107,112,133,151,255,393,414,412,380,282,267,189,167,123,67,31,24,31,17],"DICIEMBRE":[11,17,24,34,33,28,29,35,40,67,103,109,108,100,74,70,50,44,32,17,8,6,8,4]},"age":{"ENERO":[26,24,89,187,152,248,342,295,252,234,252,261,254,217,213,189,155,128,185],"FEBRERO":[21,22,79,169,135,225,310,265,228,211,225,235,228,197,192,170,140,116,167],"MARZO":[22,23,81,174,141,232,315,274,233,217,232,242,237,203,198,176,145,120,172],"ABRIL":[18,20,71,150,122,200,281,241,207,190,205,213,208,179,175,156,127,106,152],"MAYO":[26,28,102,214,174,284,394,341,291,271,293,304,297,255,250,221,181,150,216],"JUNIO":[31,34,116,238,191,319,438,381,325,301,326,337,330,283,278,247,202,168,243],"JULIO":[29,32,110,228,183,305,420,364,311,288,312,323,315,271,265,236,193,160,232],"AGOSTO":[29,32,110,228,184,305,420,364,311,289,312,323,316,271,265,236,194,160,232],"SEPTIEMBRE":[26,29,98,203,163,271,374,323,277,257,278,287,281,241,236,210,172,143,207],"OUTUBRO":[27,30,100,210,170,281,387,334,285,265,287,298,290,249,244,217,178,147,213],"NOVEMBRO":[27,29,99,209,169,279,385,332,284,264,285,296,289,247,242,215,177,146,212],"DEZEMBRO":[7,8,26,55,45,73,101,87,75,70,75,78,76,65,64,57,46,38,56]},"centros":{"Violeta Parra":[1480,1357,1405,1248,1547,1596,1494,1540,1401,1417,1348,363],"Ultraestación":[209,190,197,175,219,226,211,217,198,200,192,51],"Los Volcanes":[230,210,217,192,242,249,233,240,218,222,211,57],"Isabel Riquelme":[168,154,160,142,178,183,172,177,161,163,156,42],"Sol de Oriente":[190,174,180,160,202,207,194,200,181,186,177,47],"San Ramón Nonato":[607,556,577,510,640,724,678,699,632,587,558,150],"Federico Puga":[131,119,123,110,138,143,134,138,125,127,121,32],"Michelle Bachelet":[89,81,84,74,94,97,91,94,85,86,82,22],"Coihueco":[66,60,62,55,70,72,67,69,63,64,61,16],"Pinto":[49,45,47,42,53,54,51,52,47,49,47,12],"Portezuelo":[10,10,10,9,11,11,11,11,10,10,10,2],"Outros":[121,111,115,102,128,128,119,124,113,118,112,30],"Sin Centro":[752,627,662,558,713,730,707,634,578,604,596,121]}},
+  '2022': {"inscritos":[8301,7263,8103,7419,8645,8461,7426,8681,7932,8369,8113,6877],"atendidos":[7517,6584,7352,6729,7837,7669,6765,7892,7210,7615,7382,6107],"nsp":[784,679,751,690,808,792,661,789,722,754,731,770],"nspPed":[116,99,110,101,119,116,97,116,106,111,107,104],"nspAdul":[668,580,641,589,689,676,564,673,616,643,624,657],"samu":[24,19,26,21,24,22,20,25,22,22,22,19],"derivados":[54,47,54,49,63,58,51,60,55,57,54,44],"triageC1":[3,3,3,3,4,3,3,4,4,3,3,3],"triageC2":[37,32,37,34,41,40,35,42,38,39,38,30],"triageC3":[517,448,514,470,547,535,474,540,497,506,496,407],"triageC4":[5921,5146,5741,5245,6096,5974,5244,6141,5602,5934,5762,5161],"triageC5":[1039,955,1057,977,1149,1117,1009,1165,1069,1133,1083,906],"motivosResp":[720,586,719,655,757,739,649,747,690,703,673,541],"motivosLes":[183,165,186,172,199,192,174,196,182,186,178,148],"motivosHogar":[54,46,55,50,62,59,53,61,57,57,56,44],"motivosAlc":[21,17,22,19,24,24,21,23,22,22,21,17],"motivosPerro":[32,28,36,42,68,72,61,68,62,47,40,30],"hourly":{"ENERO":[56,98,149,177,213,185,182,207,207,374,561,566,571,547,416,386,265,236,176,97,44,35,45,22],"FEBRERO":[51,88,131,156,187,162,160,182,181,330,498,500,505,482,368,340,234,208,155,85,39,31,40,19],"MARZO":[57,98,149,176,211,184,180,206,206,373,559,563,569,544,415,385,264,235,175,97,44,35,44,22],"ABRIL":[52,90,136,161,193,168,164,188,188,339,510,513,519,496,378,351,240,214,160,88,40,32,41,20],"MAYO":[61,106,160,190,227,197,194,220,221,401,600,605,612,585,447,413,283,252,188,104,47,37,48,24],"JUNIO":[60,104,157,186,223,194,190,217,218,394,589,596,602,575,439,407,279,248,185,102,46,37,47,23],"JULHO":[53,91,138,163,196,170,167,191,191,346,520,522,529,505,387,357,245,218,163,89,40,32,41,20],"AGOSTO":[62,108,162,193,229,200,196,223,224,406,610,613,620,591,451,418,286,255,190,105,47,38,49,24],"SETEMBRO":[57,98,148,176,210,183,180,205,205,371,557,558,566,540,412,382,261,233,174,96,43,35,44,22],"OUTUBRO":[60,103,155,184,220,192,187,214,215,389,583,586,594,566,433,400,274,244,182,100,45,36,46,23],"NOVEMBRO":[58,100,151,179,214,186,183,209,209,378,567,569,577,551,421,389,266,237,177,97,44,35,45,22],"DEZEMBRO":[49,84,127,151,181,158,155,177,177,319,480,480,488,466,357,329,225,201,150,82,37,29,38,18]},"age":{"ENERO":[116,99,367,713,572,768,1002,888,763,712,770,797,782,665,658,582,480,397,565],"FEBRERO":[105,90,332,645,517,696,907,804,692,645,697,722,708,602,596,527,435,360,512],"MARÇO":[115,99,366,710,570,763,998,882,759,706,765,792,778,661,654,579,477,395,562],"ABRIL":[104,90,335,648,521,697,911,806,694,646,700,725,710,604,597,529,436,361,513],"MAIO":[122,105,390,757,608,815,1064,940,808,753,816,846,829,705,698,617,510,421,600],"JUNHO":[119,102,380,737,591,798,1041,920,791,736,798,827,811,690,682,604,498,412,586],"JULHO":[105,90,334,648,520,700,914,808,696,647,702,727,712,606,598,530,437,361,514],"AGOSTO":[122,105,388,754,606,812,1059,937,806,749,813,843,826,702,695,615,508,419,597],"SETEMBRO":[111,96,356,690,554,742,968,856,737,685,743,770,754,642,634,562,464,383,546],"OUTUBRO":[117,101,374,726,582,778,1015,897,772,718,779,807,791,672,665,589,486,402,572],"NOVEMBRO":[113,98,362,703,564,754,983,869,748,695,754,781,765,651,644,570,470,389,554],"DEZEMBRO":[95,82,305,592,475,636,829,733,631,587,636,659,645,549,543,481,396,327,466]},"centros":{"Violeta Parra":[1212,1078,1201,1099,1246,1186,1069,1216,1114,1177,1142,954],"Ultraestación":[256,227,254,232,266,253,228,261,239,252,244,202],"Los Volcanes":[417,371,414,378,434,413,373,424,389,411,398,330],"Isabel Riquelme":[373,332,370,338,388,370,334,381,348,368,357,297],"Sol de Oriente":[410,365,406,372,427,407,367,419,383,404,392,326],"San Ramón Nonato":[3677,3273,3651,3336,3780,3596,3243,3685,3369,3558,3453,2882],"Federico Puga":[171,153,170,155,177,168,152,173,159,167,162,135],"Michelle Bachelet":[65,58,64,59,68,64,58,66,61,64,62,51],"Coihueco":[112,100,111,102,118,112,101,115,106,111,108,89],"Pinto":[69,62,69,63,72,69,62,71,65,69,67,55],"Portezuelo":[11,10,11,10,12,11,10,11,10,11,10,9],"Outros":[233,208,231,212,242,230,207,237,216,229,221,184],"Sin Centro":[507,447,500,373,607,590,361,833,371,394,766,749]}},
+  '2023': {"inscritos":[6791,5960,7213,6847,7421,6269,5782,6870,6495,7730,7225,6633],"atendidos":[6218,5420,6630,6270,6826,5740,5268,6263,5902,7098,6660,6029],"nsp":[576,540,583,577,595,529,514,607,593,632,565,638],"nspPed":[102,96,104,103,106,94,92,108,106,113,101,114],"nspAdul":[474,444,479,474,489,435,422,499,487,519,464,524],"samu":[28,23,34,22,43,27,36,82,23,14,14,20],"derivados":[125,91,121,107,104,87,98,120,95,118,74,97],"triageC1":[4,4,4,4,5,4,4,5,4,5,5,5],"triageC2":[62,55,67,63,70,59,53,65,61,72,67,62],"triageC3":[753,663,820,763,849,709,647,786,722,883,818,742],"triageC4":[4448,3912,4790,4526,4932,4136,3793,4520,4264,5126,4810,4387],"triageC5":[1241,1091,1257,1161,1359,1216,1117,1292,1183,1393,1280,1214],"motivosResp":[1742,1496,1861,1826,2014,1768,1684,2001,1875,2390,2276,1828],"motivosLes":[159,140,163,159,170,149,143,162,155,176,162,155],"motivosHogar":[69,59,74,69,78,66,63,74,70,80,74,71],"motivosAlc":[34,30,37,37,41,31,27,37,38,42,38,42],"motivosPerro":[23,20,27,32,55,62,52,57,53,39,34,26],"hourly":{"ENERO":[155,237,304,302,329,260,267,337,350,300,405,484,427,449,444,353,289,229,111,69,25,22,21,49],"FEBRERO":[134,204,263,260,284,224,230,290,302,258,349,417,368,387,383,304,249,197,96,60,22,19,18,42],"MARZO":[188,287,368,365,397,314,323,406,423,362,488,583,515,541,536,425,349,276,135,84,30,27,25,59],"ABRIL":[176,269,345,341,372,294,302,381,396,339,457,546,482,506,501,398,327,259,127,79,28,25,23,55],"MAYO":[190,292,374,371,405,319,328,413,431,369,497,594,524,551,545,433,356,282,138,85,31,27,25,60],"JUNIO":[150,231,296,294,321,253,260,327,341,293,394,471,415,437,432,343,282,223,109,68,25,22,20,48],"JULHO":[123,189,243,240,263,208,213,268,280,240,323,386,341,358,354,281,231,182,89,55,20,18,17,39],"AGOSTO":[174,267,342,339,371,293,300,378,395,339,455,544,480,505,499,397,326,257,126,78,28,25,23,55],"SETEMBRO":[155,237,304,302,330,261,267,337,352,302,406,485,428,450,446,354,291,230,113,70,25,22,21,50],"OUTUBRO":[196,300,385,382,416,329,337,426,444,381,513,613,541,569,563,448,368,291,142,89,32,28,26,62],"NOVEMBRO":[184,282,361,359,391,309,317,399,416,358,481,575,508,534,528,420,345,272,133,83,30,26,24,58],"DEZEMBRO":[167,256,328,326,355,281,288,363,379,326,438,523,462,485,480,382,314,248,121,75,27,24,22,53]},"age":{"ENERO":[38,59,233,313,224,364,506,527,500,374,413,380,481,515,397,317,287,287,296],"FEBRERO":[34,53,210,284,203,330,459,478,454,339,375,345,437,468,360,288,260,260,268],"MARCO":[47,73,290,391,280,455,633,659,623,467,516,475,600,641,495,396,358,358,370],"ABRIL":[44,67,265,357,255,415,577,601,568,426,470,433,547,584,452,361,327,327,337],"MAIO":[48,73,290,388,278,451,626,651,615,462,510,469,591,632,488,391,354,353,365],"JUNHO":[38,59,232,310,222,363,503,523,495,371,410,377,476,509,393,315,285,284,294],"JULHO":[33,51,201,269,193,315,437,454,430,323,357,328,414,442,342,273,248,247,256],"AGOSTO":[44,67,266,356,254,414,574,598,565,424,469,431,544,582,450,360,326,326,336],"SETEMBRO":[38,61,241,323,231,376,521,542,513,385,425,391,494,527,408,326,295,295,305],"OUTUBRO":[55,86,338,453,324,526,730,759,719,539,595,547,691,738,571,457,413,413,427],"NOVEMBRO":[51,80,316,423,302,492,682,710,672,504,558,513,648,692,535,428,387,386,400],"DEZEMBRO":[47,73,287,384,274,447,620,645,610,458,507,466,589,628,486,389,352,351,363]},"centros":{"Violeta Parra":[1141,1027,1228,1133,1206,1056,977,1131,1046,1246,1155,1047],"Ultraestación":[221,199,238,219,234,204,189,219,202,242,224,203],"Los Volcanes":[272,245,293,270,287,251,232,268,248,296,274,249],"Isabel Riquelme":[327,295,353,325,346,302,280,323,299,357,330,300],"Sol de Oriente":[296,267,319,294,314,274,254,293,271,323,299,272],"San Ramón Nonato":[3023,2720,3260,3008,3202,2798,2591,2992,2773,3302,3060,2784],"Federico Puga":[108,97,116,107,114,100,93,107,99,118,109,99],"Michelle Bachelet":[35,31,38,35,37,33,30,35,32,38,35,32],"Coihueco":[74,66,80,73,78,68,63,73,68,81,75,68],"Pinto":[58,52,63,58,62,54,50,57,53,64,59,53],"Portezuelo":[7,7,8,7,7,6,6,7,6,8,7,7],"Outros":[211,190,228,210,224,196,181,210,194,232,215,195],"Sin Centro":[445,420,506,531,560,398,322,548,611,891,818,720]}},
+  '2024': {"inscritos":[4628,4339,4871,4527,5315,5162,4565,5093,4780,5198,5187,4707],"atendidos":[4380,4102,4571,4252,5006,4883,4350,4824,4497,4909,4945,4454],"nsp":[248,237,300,275,309,279,215,269,283,289,242,253],"nspPed":[40,38,48,44,49,44,34,43,45,46,39,40],"nspAdul":[208,199,252,231,260,235,181,226,238,243,203,213],"samu":[18,16,17,27,30,21,17,17,17,14,14,20],"derivados":[97,91,121,107,104,87,98,120,95,118,74,97],"triageC1":[1,1,2,1,3,2,2,3,2,2,2,2],"triageC2":[47,44,55,51,60,58,51,57,54,59,58,50],"triageC3":[624,590,696,649,746,716,642,724,681,746,729,644],"triageC4":[2644,2489,2801,2598,2965,2930,2639,2956,2744,2981,2985,2723],"triageC5":[1064,978,1017,953,1232,1177,1016,1084,1016,1121,1171,1035],"motivosResp":[566,550,693,684,837,817,728,810,758,835,832,721],"motivosLes":[81,74,90,83,97,92,83,92,88,96,93,82],"motivosHogar":[16,14,18,16,20,19,17,19,18,20,20,16],"motivosAlc":[36,33,42,38,47,46,40,44,42,46,46,40],"motivosPerro":[10,9,13,11,16,15,13,15,14,16,16,14],"hourly":{"ENERO":[37,55,61,96,80,74,96,75,118,293,451,577,496,427,292,272,282,220,151,69,44,37,53,24],"FEBRERO":[33,51,59,91,76,70,90,71,111,278,428,547,470,405,277,257,267,209,143,65,42,35,50,22],"MARZO":[40,60,68,105,87,80,103,80,127,318,486,621,535,460,315,293,303,238,163,74,47,40,57,25],"ABRIL":[37,56,64,98,82,75,96,75,119,298,456,580,502,431,295,275,284,223,152,69,44,37,53,24],"MAYO":[44,66,76,117,97,89,115,89,141,356,543,690,597,513,351,326,336,264,181,82,52,44,63,28],"JUNIO":[42,63,72,111,92,84,108,84,134,337,514,652,565,486,333,309,318,250,171,78,49,42,59,27],"JULHO":[38,56,65,101,83,76,98,76,121,305,465,589,511,440,302,280,288,226,155,70,44,38,53,24],"AGOSTO":[45,67,76,116,97,88,112,87,133,345,517,655,567,487,335,311,319,251,172,78,49,42,59,27],"SETEMBRO":[42,63,73,110,91,83,106,82,126,326,490,619,536,461,317,294,302,238,163,74,46,40,56,26],"OUTUBRO":[45,68,79,119,98,89,115,88,138,357,534,673,584,502,345,319,329,259,177,81,51,43,61,28],"NOVEMBRO":[44,66,76,116,96,87,112,87,135,349,524,661,572,492,338,313,322,254,174,79,50,42,60,27],"DEZEMBRO":[40,59,68,105,87,79,102,78,123,316,475,599,519,446,307,284,292,230,158,72,45,38,55,25]},"age":{"ENERO":[25,23,112,219,202,236,311,319,348,260,319,274,291,317,261,237,176,165,285],"FEBRERO":[22,22,105,207,190,222,292,300,327,244,300,258,274,298,245,222,165,155,268],"MARÇO":[26,25,125,245,226,263,345,357,388,290,354,305,325,352,290,263,195,184,318],"ABRIL":[25,23,117,229,211,246,322,334,362,271,332,285,304,329,271,246,183,172,298],"MAIO":[30,28,139,271,250,291,381,394,428,320,393,338,359,389,320,291,216,203,352],"JUNHO":[28,27,132,257,237,276,361,373,406,303,372,320,340,369,304,276,205,193,334],"JULHO":[26,24,120,233,215,250,327,338,368,275,337,290,308,334,275,250,186,175,303],"AGOSTO":[29,28,139,271,250,291,382,394,428,320,393,338,360,390,320,292,216,204,352],"SETEMBRO":[27,26,128,251,231,270,354,365,398,297,366,315,335,363,299,271,202,190,329],"OUTUBRO":[29,27,136,266,246,287,376,388,422,315,388,333,354,384,316,287,213,201,348],"NOVEMBRO":[28,27,133,260,239,281,368,380,413,309,380,326,347,376,310,281,209,197,341],"DEZEMBRO":[25,24,120,236,218,256,335,345,376,281,345,297,315,342,281,256,190,179,310]},"centros":{"Violeta Parra":[861,814,914,855,1009,954,863,963,909,987,990,900],"Ultraestación":[207,195,220,206,242,229,208,231,219,238,239,217],"Los Volcanes":[213,202,226,212,250,236,213,238,225,245,245,222],"Isabel Riquelme":[199,188,212,198,234,221,200,223,211,229,230,208],"Sol de Oriente":[220,208,234,219,258,244,221,247,233,254,254,230],"San Ramón Nonato":[2046,1937,2178,2038,2398,2267,2052,2291,2163,2350,2358,2142],"Federico Puga":[49,46,52,49,57,54,49,55,52,56,57,51],"Michelle Bachelet":[33,31,35,33,39,37,33,37,36,38,39,35],"Coihueco":[60,57,64,60,70,67,60,67,64,70,70,63],"Pinto":[51,48,54,51,60,57,51,57,54,59,59,53],"Portezuelo":[11,10,12,11,13,12,11,12,11,12,13,11],"Outros":[182,172,193,181,213,201,182,204,193,209,210,190],"Sin Centro":[248,234,263,246,290,274,248,277,261,284,285,258]}},
+  '2025': {"inscritos":[4259,3556,4324,4024,4763,4027,4051,4197,4402,4726,4885,4602],"atendidos":[3973,3314,4019,3730,4479,3821,3853,4002,4058,4419,4506,4382],"nsp":[286,242,305,294,284,206,198,195,344,307,379,222],"nspPed":[45,26,63,67,50,40,34,47,85,85,101,46],"nspAdul":[241,216,242,227,234,166,164,148,259,222,278,176],"samu":[19,16,17,27,30,21,17,17,17,14,14,20],"derivados":[125,91,121,107,104,87,98,120,95,118,74,97],"triageC1":[1,1,3,2,6,2,5,8,0,1,2,4],"triageC2":[52,32,55,53,45,46,38,46,44,49,56,32],"triageC3":[549,459,624,575,623,509,476,490,525,630,608,556],"triageC4":[2839,2295,2870,2665,3285,2817,2905,2874,2925,3297,3278,3126],"triageC5":[532,527,467,435,520,447,429,584,564,442,562,664],"motivosResp":[350,201,566,749,1307,1027,768,967,1102,1253,1238,884],"motivosLes":[76,51,64,42,44,35,38,40,44,48,53,56],"motivosHogar":[2,1,0,0,2,2,1,1,2,0,0,0],"motivosAlc":[17,15,24,22,26,36,20,17,14,24,27,25],"motivosPerro":[12,16,12,20,16,16,15,12,15,13,21,19],"hourly":{"ENERO":[24,46,75,95,91,68,71,77,116,310,418,470,429,347,258,238,206,200,143,77,86,46,48,34],"FEBRERO":[33,30,68,73,79,63,64,72,87,274,352,401,348,301,261,176,172,154,111,62,45,38,35,15],"MARZO":[29,60,103,93,108,82,68,99,117,272,444,463,447,390,292,204,190,191,135,80,36,31,57,28],"ABRIL":[41,71,106,113,108,58,73,87,120,313,411,423,374,335,268,180,197,167,104,66,41,26,34,14],"MAYO":[49,84,128,141,133,101,106,111,194,392,518,535,500,392,256,200,151,158,95,78,57,47,33,20],"JUNIO":[25,60,80,107,105,86,105,102,141,319,549,508,453,325,243,159,132,115,85,30,26,23,26,17],"JULIO":[28,69,70,78,97,94,82,93,128,325,559,547,463,330,248,160,143,102,65,64,25,28,32,23],"AGOSTO":[53,93,104,131,152,102,128,125,140,314,477,506,419,326,259,197,142,118,70,53,34,22,17,20],"SEPTIEMBRE":[35,53,98,105,115,86,106,86,122,313,471,440,465,402,288,208,179,152,123,84,43,31,32,21],"OCTUBRE":[33,87,107,92,104,81,82,114,169,367,479,543,483,412,311,217,196,182,125,70,39,44,38,44],"NOVIEMBRE":[43,83,105,102,109,104,60,106,160,307,464,483,492,420,328,243,229,247,136,92,56,44,36,57],"DICIEMBRE":[39,72,114,107,122,92,74,82,116,324,489,527,456,379,300,215,212,181,142,109,63,36,44,87]},"age":{"ENERO":[7,22,76,173,139,281,314,308,287,259,241,197,259,296,267,257,165,169,256],"FEBRERO":[9,20,56,105,113,205,257,228,231,208,227,189,255,248,242,194,158,159,210],"MARZO":[15,16,98,193,217,286,286,271,259,250,205,255,262,275,299,241,200,139,252],"ABRIL":[12,28,86,224,210,324,266,249,215,220,235,222,249,259,232,201,171,130,197],"MAYO":[12,30,119,265,283,324,303,317,268,282,244,252,311,318,294,232,207,187,231],"JUNIO":[14,31,111,199,148,221,241,277,255,252,221,222,279,268,277,211,245,114,235],"JULIO":[12,33,94,189,176,273,285,244,209,282,212,242,284,266,250,195,194,171,242],"AGOSTO":[22,50,120,289,227,259,268,257,240,265,240,224,256,224,261,237,182,159,222],"SEPTIEMBRE":[10,52,135,259,218,258,304,257,226,261,211,233,270,302,265,200,201,163,233],"OCTUBRE":[18,40,125,325,285,299,278,262,310,297,224,241,266,280,260,269,215,185,240],"NOVIEMBRE":[21,37,148,363,334,321,330,307,250,284,232,210,256,287,303,228,184,163,248],"DICIEMBRE":[20,31,97,214,212,273,328,362,306,274,231,220,256,328,323,260,235,148,264]},"centros":{"Violeta Parra":[864,759,900,779,908,809,837,903,997,1013,1111,1130],"Ultraestación":[90,97,108,101,99,91,92,99,71,83,89,98],"Los Volcanes":[250,229,257,192,243,183,203,204,199,250,243,247],"Isabel Riquelme":[182,117,188,158,180,157,163,149,137,144,127,158],"Sol de Oriente":[260,212,272,210,254,221,234,283,292,311,323,288],"San Ramón Nonato":[1721,1408,1780,1788,2203,1853,1843,1862,1866,2074,2081,1897],"Federico Puga":[90,68,80,57,96,73,56,74,53,70,73,58],"Michelle Bachelet":[38,24,35,32,39,38,33,19,39,36,30,33],"Coihueco":[36,26,51,38,41,36,56,42,39,34,50,47],"Pinto":[31,27,19,34,41,27,22,25,27,42,31,52],"Portezuelo":[11,8,6,5,10,4,12,6,9,7,5,7],"Outros":[188,124,152,175,181,154,141,137,145,166,156,167],"Sin Centro":[212,215,171,161,184,175,161,199,184,189,187,200]}}
+};
+
+const YEARS = ['2019','2020','2021','2022','2023','2024','2025'];
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const MONTH_KEYS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+const HOURS = ['08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','00','01','02','03','04','05','06','07'];
+const AGE_LABELS = ['<1','1','2–4','5–9','10–14','15–19','20–24','25–29','30–34','35–39','40–44','45–49','50–54','55–59','60–64','65–69','70–74','75–79','80+'];
+const CENTRO_KEYS = ['Violeta Parra','Ultraestación','Los Volcanes','Isabel Riquelme','Sol de Oriente','San Ramón Nonato','Federico Puga','Michelle Bachelet','Coihueco','Pinto','Portezuelo','Outros','Sin Centro'];
+const C = {teal:'#00B4A0',teal2:'#00D4BC',cyan:'#22C5DC',amber:'#F5A623',rose:'#F05060',violet:'#7B83E8',green:'#4CAF7D'};
+const YEAR_COLORS = ['#22C5DC','#00B4A0','#7B83E8','#F5A623','#F05060','#4CAF7D','#A0A8FF'];
+
+Chart.defaults.color='#6A8099'; Chart.defaults.borderColor='rgba(255,255,255,0.05)';
+Chart.defaults.font.family="'IBM Plex Mono',monospace"; Chart.defaults.font.size=11;
+Chart.defaults.plugins.legend.labels.usePointStyle=true;
+Chart.defaults.plugins.legend.labels.pointStyleWidth=8;
+Chart.defaults.plugins.legend.labels.boxHeight=7;
+
+const sum = a => a.reduce((s,v)=>s+v,0);
+const fmt = n => Math.round(n).toLocaleString('es-CL');
+const scaleOpts = (ex={}) => ({ y:{grid:{color:'rgba(255,255,255,0.04)'},...ex.y}, x:{grid:{display:false},...ex.x} });
+
+// ── Estado actual ──
+let curYear = '2025';
+let D = ALL['2025'];
+
+// ── Charts instances ──
+let charts = {};
+function destroyChart(id) { if(charts[id]){charts[id].destroy();delete charts[id];} }
+function makeChart(id, cfg) { destroyChart(id); charts[id] = new Chart(document.getElementById(id).getContext('2d'),cfg); return charts[id]; }
+
+// ══════════════════════════════════════════
+//  CAMBIO DE AÑO
+// ══════════════════════════════════════════
+function setYear(yr, btn) {
+  document.querySelectorAll('.ybtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  curYear = yr;
+  D = yr === 'ALL' ? buildAllYears() : ALL[yr];
+  document.getElementById('yearContextBadge').textContent = yr === 'ALL' ? 'Histórico' : yr;
+  document.getElementById('header-title-sub')?.textContent;
+  renderAll();
+}
+
+function buildAllYears() {
+  // Suma todos los años
+  const base = JSON.parse(JSON.stringify(ALL['2025']));
+  const keys1D = ['inscritos','atendidos','nsp','nspPed','nspAdul','samu','derivados',
+                  'triageC1','triageC2','triageC3','triageC4','triageC5',
+                  'motivosResp','motivosLes','motivosHogar','motivosAlc','motivosPerro'];
+  keys1D.forEach(k => {
+    base[k] = MONTHS.map((_,i) => sum(YEARS.map(y => ALL[y][k][i])));
+  });
+  MONTH_KEYS.forEach(mk => {
+    base.hourly[mk] = Array(24).fill(0).map((_,i) => sum(YEARS.map(y => (ALL[y].hourly[mk]||Array(24).fill(0))[i]||0)));
+    base.age[mk] = Array(19).fill(0).map((_,i) => sum(YEARS.map(y => (ALL[y].age[mk]||Array(19).fill(0))[i]||0)));
+  });
+  CENTRO_KEYS.forEach(c => {
+    base.centros[c] = MONTHS.map((_,i) => sum(YEARS.map(y => (ALL[y].centros[c]||Array(12).fill(0))[i]||0)));
+  });
+  return base;
+}
+
+// ══════════════════════════════════════════
+//  RENDER ALL
+// ══════════════════════════════════════════
+function renderAll() {
+  renderResumen();
+  renderHistorico();
+  renderDemanda();
+  renderTriage();
+  renderPoblacion();
+  renderCentros();
+}
+
+// ─── RESUMEN ───
+function renderResumen() {
+  const totI = sum(D.inscritos), totA = sum(D.atendidos);
+  const totN = sum(D.nsp), totD = sum(D.derivados);
+  const rend = (totA/totI*100).toFixed(1);
+  
+  // Tendencia vs año anterior (si aplica)
+  let trendI='', trendA='';
+  if(curYear !== 'ALL') {
+    const prevYr = String(parseInt(curYear)-1);
+    if(ALL[prevYr]) {
+      const pA = sum(ALL[prevYr].atendidos);
+      const pct = ((totA-pA)/pA*100).toFixed(1);
+      const cls = pct>=0?'trend-up':'trend-dn'; const sym = pct>=0?'▲':'▼';
+      trendA = `<span class="trend-badge ${cls}">${sym}${Math.abs(pct)}%</span>`;
+    }
+  }
+  
+  document.getElementById('kpiI').textContent = fmt(totI);
+  document.getElementById('kpiIsub').textContent = `Rendimiento: ${rend}%`;
+  document.getElementById('kpiA').innerHTML = fmt(totA) + trendA;
+  document.getElementById('kpiAsub').innerHTML = `Rendimiento global: <strong style="color:var(--green)">${rend}%</strong>`;
+  document.getElementById('kpiN').textContent = fmt(totN);
+  document.getElementById('kpiNsub').textContent = `Ped: ${fmt(sum(D.nspPed))} · Adul: ${fmt(sum(D.nspAdul))}`;
+  document.getElementById('kpiD').textContent = fmt(totD);
+  document.getElementById('kpiDsub').textContent = `SAMU: ${fmt(sum(D.samu))} ingresos`;
+  
+  makeChart('monthlyChart',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Inscritos',data:D.inscritos,backgroundColor:'rgba(0,180,160,0.7)',borderRadius:5},
+    {label:'Atendidos',data:D.atendidos,backgroundColor:'rgba(34,197,220,0.7)',borderRadius:5},
+    {label:'NSP',data:D.nsp,backgroundColor:'rgba(245,166,35,0.7)',borderRadius:5},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  const rends = D.atendidos.map((a,i)=>+(a/D.inscritos[i]*100).toFixed(1));
+  makeChart('rendimChart',{type:'line',data:{labels:MONTHS,datasets:[{label:'% Rendimiento',data:rends,
+    borderColor:C.teal,backgroundColor:'rgba(0,180,160,0.08)',fill:true,tension:0.4,
+    pointRadius:5,pointBackgroundColor:C.teal,pointBorderColor:'#050E1A',pointBorderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{min:Math.max(0,Math.min(...rends)-3),ticks:{callback:v=>v+'%'}}})}});
+  
+  const tc2=sum(D.triageC2),tc3=sum(D.triageC3),tc4=sum(D.triageC4),tc5=sum(D.triageC5);
+  makeChart('triagePieResumen',{type:'doughnut',data:{labels:['C2','C3','C4','C5'],datasets:[{
+    data:[tc2,tc3,tc4,tc5],backgroundColor:['#F05060','#F5A623','#00B4A0','#7B83E8'],
+    borderWidth:2,borderColor:'#0D1E30'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom'}}}});
+  
+  makeChart('nspChartResumen',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Pediátrico',data:D.nspPed,backgroundColor:'rgba(123,131,232,0.75)',borderRadius:4},
+    {label:'Adulto',data:D.nspAdul,backgroundColor:'rgba(240,80,96,0.7)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+  
+  makeChart('samuChartResumen',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'SAMU',data:D.samu,backgroundColor:'rgba(34,197,220,0.8)',borderRadius:4},
+    {label:'Deriv. UEH',data:D.derivados,backgroundColor:'rgba(245,166,35,0.8)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+}
+
+// ─── HISTÓRICO ───
+function renderHistorico() {
+  const yrs = YEARS;
+  const totAtend = yrs.map(y=>sum(ALL[y].atendidos));
+  const totInscr = yrs.map(y=>sum(ALL[y].inscritos));
+  const totNsp   = yrs.map(y=>sum(ALL[y].nsp));
+  const totDeriv = yrs.map(y=>sum(ALL[y].derivados));
+  const totTri4  = yrs.map(y=>sum(ALL[y].triageC4));
+  const rendims  = yrs.map((y,i)=>(totAtend[i]/totInscr[i]*100).toFixed(1));
+  
+  // Actualizar KPI cards históricas
+  yrs.forEach((y,i)=>{
+    const el = document.getElementById('hist_'+y);
+    if(!el) return;
+    const rend = rendims[i];
+    el.querySelector('.kpi-value').textContent = fmt(totAtend[i]);
+    el.querySelector('.kpi-sub').textContent = `Atendidos · ${rend}% rend.`;
+  });
+  
+  makeChart('histAtendChart',{type:'bar',data:{labels:yrs,datasets:[{
+    label:'Atendidos',data:totAtend,
+    backgroundColor:yrs.map((_,i)=>YEAR_COLORS[i]+'CC'),borderRadius:6,
+  }]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  makeChart('histInscAtendChart',{type:'bar',data:{labels:yrs,datasets:[
+    {label:'Inscritos',data:totInscr,backgroundColor:'rgba(0,180,160,0.6)',borderRadius:4},
+    {label:'Atendidos',data:totAtend,backgroundColor:'rgba(34,197,220,0.8)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  makeChart('histRendimChart',{type:'line',data:{labels:yrs,datasets:[{label:'% Rendimiento',
+    data:rendims.map(Number),borderColor:C.teal,backgroundColor:'rgba(0,180,160,0.1)',
+    fill:true,tension:0.4,pointRadius:6,pointBackgroundColor:C.teal,pointBorderColor:'#050E1A',pointBorderWidth:2}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{min:85,max:100,ticks:{callback:v=>v+'%'}}})}});
+  
+  makeChart('histNspChart',{type:'bar',data:{labels:yrs,datasets:[{label:'NSP',
+    data:totNsp,backgroundColor:'rgba(245,166,35,0.8)',borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  makeChart('histDerivChart',{type:'bar',data:{labels:yrs,datasets:[{label:'Derivados UEH',
+    data:totDeriv,backgroundColor:'rgba(240,80,96,0.8)',borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  makeChart('histTri4Chart',{type:'bar',data:{labels:yrs,datasets:[{label:'Triage C4',
+    data:totTri4,backgroundColor:'rgba(76,175,125,0.8)',borderRadius:5}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+  
+  // Evolución mensual comparada (todos los años)
+  makeChart('histMesChart',{type:'line',data:{labels:MONTHS,datasets:yrs.map((y,i)=>({
+    label:y,data:ALL[y].atendidos,borderColor:YEAR_COLORS[i],
+    backgroundColor:YEAR_COLORS[i]+'22',fill:false,tension:0.4,
+    pointRadius:3,borderWidth:2,
+  }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxHeight:6,font:{size:10}}}},
+    scales:scaleOpts({y:{ticks:{callback:v=>v.toLocaleString('es-CL')}}})}});
+}
+
+// ─── DEMANDA HORARIA ───
+let hourlyChartInst = null;
+let curHourlyMonth = 'ENERO';
+
+function renderDemanda() {
+  const totA = sum(D.atendidos);
+  const hourlyAnual = Array(24).fill(0);
+  MONTH_KEYS.forEach(mk => { const h=D.hourly[mk]||[]; h.forEach((v,i)=>hourlyAnual[i]+=v); });
+  const sarTotal    = sum(hourlyAnual.slice(9));
+  const diurnoTotal = sum(hourlyAnual.slice(0,9));
+  const maxIdx = hourlyAnual.indexOf(Math.max(...hourlyAnual));
+  
+  document.getElementById('kpiDemTotal').textContent = fmt(totA);
+  document.getElementById('kpiDemSub').textContent   = curYear === 'ALL' ? 'Todos los años' : 'Año '+curYear;
+  document.getElementById('kpiSarT').textContent     = fmt(sarTotal);
+  document.getElementById('kpiDiuT').textContent     = fmt(diurnoTotal);
+  document.getElementById('kpiHPico').textContent    = HOURS[maxIdx]+':00';
+  document.getElementById('kpiHPicoSub').textContent = fmt(hourlyAnual[maxIdx])+' pacientes acumulados';
+  
+  // Diurno vs SAR
+  const diurnoM = MONTH_KEYS.map(mk => sum((D.hourly[mk]||[]).slice(0,9)));
+  const sarM    = MONTH_KEYS.map(mk => sum((D.hourly[mk]||[]).slice(9)));
+  makeChart('diurnoSarChart',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Diurno (08–16h)',data:diurnoM,backgroundColor:'rgba(123,131,232,0.7)',borderRadius:4},
+    {label:'SAR (17–07h)',data:sarM,backgroundColor:'rgba(0,180,160,0.75)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+  
+  // Top 5 horas
+  const sorted = [...hourlyAnual.map((v,i)=>({v,i}))].sort((a,b)=>b.v-a.v).slice(0,5);
+  const topColors = [C.teal,C.cyan,C.violet,C.amber,C.rose];
+  const tLeg = document.getElementById('topHorasLegend');
+  tLeg.innerHTML='';
+  document.getElementById('topHorasSubtitle').textContent = curYear==='ALL'?'Acumulado todos los años':'Acumulado '+curYear;
+  sorted.forEach((h,idx)=>{
+    const pct=Math.round(h.v/sorted[0].v*100);
+    tLeg.innerHTML+=`<div class="bar-row"><div class="bar-dot" style="background:${topColors[idx]}"></div>
+      <div class="bar-name">${HOURS[h.i]}:00 h</div>
+      <div class="bar-track"><div class="bar-fill" style="background:${topColors[idx]};width:${pct}%"></div></div>
+      <div class="bar-val">${fmt(h.v)}</div></div>`;
+  });
+  
+  updateHourly(curHourlyMonth, null);
+}
+
+function updateHourly(month, btn) {
+  if(btn){document.querySelectorAll('#hourlyMonthTabs .mbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  curHourlyMonth = month;
+  let dataset, title;
+  if(month==='ANUAL'){
+    const ha=Array(24).fill(0);
+    MONTH_KEYS.forEach(mk=>{const h=D.hourly[mk]||[];h.forEach((v,i)=>ha[i]+=v);});
+    dataset=ha.map(v=>Math.round(v/12));
+    title='Promedio Mensual — '+(curYear==='ALL'?'Histórico':curYear);
+  } else {
+    dataset=D.hourly[month]||Array(24).fill(0);
+    title=month.charAt(0)+month.slice(1).toLowerCase()+' '+(curYear==='ALL'?'(acumulado)':curYear);
+  }
+  document.getElementById('hourlyTitle').textContent='Pacientes atendidos por hora — '+title;
+  const colors=dataset.map((_,i)=>i>=9?'rgba(0,180,160,0.8)':'rgba(123,131,232,0.65)');
+  destroyChart('hourlyChart');
+  hourlyChartInst=new Chart(document.getElementById('hourlyChart').getContext('2d'),{
+    type:'bar',data:{labels:HOURS.map(h=>h+':00'),datasets:[{label:'Atendidos',data:dataset,backgroundColor:colors,borderRadius:5}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} pac.`}}},
+      scales:scaleOpts()}
+  });
+  charts['hourlyChart']=hourlyChartInst;
+}
+
+// ─── TRIAGE ───
+function renderTriage() {
+  const t1=sum(D.triageC1),t2=sum(D.triageC2),t3=sum(D.triageC3),t4=sum(D.triageC4),t5=sum(D.triageC5);
+  const tot=t1+t2+t3+t4+t5;
+  const pct=v=>(v/tot*100).toFixed(1)+'% del total';
+  document.getElementById('tc1').textContent=fmt(t1); document.getElementById('tc1p').textContent=pct(t1);
+  document.getElementById('tc2').textContent=fmt(t2); document.getElementById('tc2p').textContent=pct(t2);
+  document.getElementById('tc3').textContent=fmt(t3); document.getElementById('tc3p').textContent=pct(t3);
+  document.getElementById('tc4').textContent=fmt(t4); document.getElementById('tc4p').textContent=pct(t4);
+  document.getElementById('tc5').textContent=fmt(t5); document.getElementById('tc5p').textContent=pct(t5);
+  
+  makeChart('triageMesChart',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'C2',data:D.triageC2,backgroundColor:'#F05060',borderRadius:4},
+    {label:'C3',data:D.triageC3,backgroundColor:'#F5A623',borderRadius:4},
+    {label:'C4',data:D.triageC4,backgroundColor:'#00B4A0',borderRadius:4},
+    {label:'C5',data:D.triageC5,backgroundColor:'#7B83E8',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+  
+  makeChart('triageDonutChart',{type:'doughnut',data:{labels:['C2','C3','C4','C5'],datasets:[{
+    data:[t2,t3,t4,t5],backgroundColor:['#F05060','#F5A623','#00B4A0','#7B83E8'],
+    borderWidth:2,borderColor:'#0D1E30'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:false}}}});
+  
+  const tLeg=document.getElementById('triageLegend');tLeg.innerHTML='';
+  [{n:'C2 Emergencia',c:'#F05060',v:t2},{n:'C3 Urgencia',c:'#F5A623',v:t3},
+   {n:'C4 Semi-urg.',c:'#00B4A0',v:t4},{n:'C5 No urgente',c:'#7B83E8',v:t5}].forEach(it=>{
+    const p=Math.round(it.v/Math.max(t2,t3,t4,t5)*100);
+    tLeg.innerHTML+=`<div class="bar-row"><div class="bar-dot" style="background:${it.c}"></div>
+      <div class="bar-name">${it.n}</div>
+      <div class="bar-track"><div class="bar-fill" style="background:${it.c};width:${p}%"></div></div>
+      <div class="bar-val">${fmt(it.v)}</div></div>`;
+  });
+  
+  makeChart('motivosChart',{type:'bar',data:{labels:MONTHS,datasets:[
+    {label:'Respiratorio', data:D.motivosResp, backgroundColor:'rgba(34,197,220,0.8)',borderRadius:4},
+    {label:'Const. Lesiones',data:D.motivosLes,backgroundColor:'rgba(245,166,35,0.8)',borderRadius:4},
+    {label:'Alcoholemias', data:D.motivosAlc,  backgroundColor:'rgba(76,175,125,0.8)', borderRadius:4},
+    {label:'Mord. Perro',  data:D.motivosPerro,backgroundColor:'rgba(240,80,96,0.75)',borderRadius:4},
+    {label:'Acc. Hogar',   data:D.motivosHogar,backgroundColor:'rgba(123,131,232,0.8)',borderRadius:4},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+}
+
+// ─── POBLACIÓN ───
+let ageCh=null, curAgeMes='ENERO';
+function renderPoblacion() {
+  const totA=sum(D.atendidos);
+  let ped=0,adu=0;
+  MONTH_KEYS.forEach(mk=>{const a=D.age[mk]||[];ped+=sum(a.slice(0,5));adu+=sum(a.slice(5));});
+  const ageAnual=AGE_LABELS.map((_,i)=>sum(MONTH_KEYS.map(mk=>(D.age[mk]||Array(19).fill(0))[i]||0)));
+  const maxAgeIdx=ageAnual.indexOf(Math.max(...ageAnual));
+  
+  document.getElementById('kpiPobT').textContent=fmt(totA);
+  document.getElementById('kpiAdult').textContent=fmt(adu);
+  document.getElementById('kpiAdultP').textContent=(adu/totA*100).toFixed(1)+'% del total';
+  document.getElementById('kpiPedt').textContent=fmt(ped);
+  document.getElementById('kpiPedtP').textContent=(ped/totA*100).toFixed(1)+'% del total';
+  document.getElementById('kpiGrupo').textContent=AGE_LABELS[maxAgeIdx];
+  document.getElementById('kpiGrupoS').textContent=fmt(ageAnual[maxAgeIdx])+' pacientes acumulados';
+  
+  const pedM=MONTH_KEYS.map(mk=>sum((D.age[mk]||[]).slice(0,5)));
+  const aduM=MONTH_KEYS.map(mk=>sum((D.age[mk]||[]).slice(5)));
+  makeChart('pedAdultoChart',{type:'line',data:{labels:MONTHS,datasets:[
+    {label:'Adultos (≥15)',data:aduM,borderColor:C.teal,backgroundColor:'rgba(0,180,160,0.08)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:C.teal,pointBorderColor:'#050E1A',pointBorderWidth:2},
+    {label:'Pediátrico (<15)',data:pedM,borderColor:C.violet,backgroundColor:'rgba(123,131,232,0.08)',fill:true,tension:0.4,pointRadius:5,pointBackgroundColor:C.violet,pointBorderColor:'#050E1A',pointBorderWidth:2},
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+  
+  makeChart('ageAnualChart',{type:'bar',data:{labels:AGE_LABELS,datasets:[{label:'Total',data:ageAnual,
+    backgroundColor:ageAnual.map((_,i)=>i<5?'rgba(123,131,232,0.75)':'rgba(0,180,160,0.75)'),borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:scaleOpts()}});
+  
+  updateAge(curAgeMes,null);
+}
+
+function updateAge(month, btn) {
+  if(btn){document.querySelectorAll('#ageMonthTabs .mbtn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  curAgeMes=month;
+  const data=D.age[month]||Array(19).fill(0);
+  const colors=data.map((_,i)=>i<5?'rgba(123,131,232,0.75)':'rgba(0,180,160,0.75)');
+  destroyChart('ageBarChart');
+  charts['ageBarChart']=new Chart(document.getElementById('ageBarChart').getContext('2d'),{
+    type:'bar',data:{labels:AGE_LABELS,datasets:[{label:'Atendidos',data,backgroundColor:colors,borderRadius:4}]},
+    options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+      scales:{x:{grid:{color:'rgba(255,255,255,0.04)'}},y:{grid:{display:false}}}}
+  });
+}
+
+// ─── CENTROS ───
+function renderCentros() {
+  const centroTot={};let grand=0;
+  CENTRO_KEYS.forEach(c=>{centroTot[c]=sum(D.centros[c]||Array(12).fill(0));grand+=centroTot[c];});
+  
+  document.getElementById('kpiCentT').textContent=fmt(grand);
+  document.getElementById('kpiSanR').textContent=fmt(centroTot['San Ramón Nonato'])+' pac. · '+(centroTot['San Ramón Nonato']/grand*100).toFixed(1)+'%';
+  document.getElementById('kpiViolP').textContent=fmt(centroTot['Violeta Parra']);
+  document.getElementById('kpiViolPct').textContent=(centroTot['Violeta Parra']/grand*100).toFixed(1)+'% del total';
+  document.getElementById('kpiSinC').textContent=fmt((centroTot['Sin Centro']||0)+(centroTot['Outros']||0));
+  
+  const colors=['#00B4A0','#22C5DC','#7B83E8','#F5A623','#4CAF7D','#42A0F5','#F05060','#EC407A','#9E9E9E','#8D6E63','#66BB6A','#FF7043','#B0BEC5'];
+  makeChart('centroDonut',{type:'doughnut',data:{labels:CENTRO_KEYS,datasets:[{
+    data:CENTRO_KEYS.map(c=>centroTot[c]),backgroundColor:colors,borderWidth:2,borderColor:'#0D1E30'}]},
+  options:{responsive:true,maintainAspectRatio:false,cutout:'50%',
+    plugins:{legend:{position:'right',labels:{font:{size:10},boxHeight:9}}}}});
+  
+  const top4=CENTRO_KEYS.slice(0,4);
+  makeChart('centroMesChart',{type:'bar',data:{labels:MONTHS,datasets:top4.map((c,i)=>({
+    label:c,data:D.centros[c]||Array(12).fill(0),
+    backgroundColor:['rgba(0,180,160,0.75)','rgba(34,197,220,0.75)','rgba(123,131,232,0.75)','rgba(245,166,35,0.75)'][i],borderRadius:4
+  }))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},scales:scaleOpts()}});
+  
+  const tbody=document.getElementById('centrosTableBody');
+  const maxT=centroTot['San Ramón Nonato']||1;
+  let rows=CENTRO_KEYS.map(c=>{
+    const vals=D.centros[c]||Array(12).fill(0);
+    const t=centroTot[c];const p=(t/grand*100).toFixed(1);
+    const w=Math.round(t/maxT*60);
+    return `<tr><td>${c}<span class="bar-mini" style="width:${w}px"></span></td>
+      ${vals.map(v=>`<td>${fmt(v)}</td>`).join('')}
+      <td><strong>${fmt(t)}</strong></td><td style="color:var(--teal)">${p}%</td></tr>`;
+  });
+  const colT=Array.from({length:12},(_,i)=>sum(CENTRO_KEYS.map(c=>(D.centros[c]||Array(12).fill(0))[i])));
+  rows.push(`<tr style="border-top:1px solid var(--border);background:rgba(0,180,160,0.04)">
+    <td><strong>TOTAL</strong></td>${colT.map(v=>`<td><strong>${fmt(v)}</strong></td>`).join('')}
+    <td><strong>${fmt(grand)}</strong></td><td style="color:var(--teal)">100%</td></tr>`);
+  tbody.innerHTML=rows.join('');
+}
+
+// ══════════════════════════════════════════
+//  UI
+// ══════════════════════════════════════════
+function switchTab(el, name) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+function updateClock() {
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+updateClock(); setInterval(updateClock,1000);
+document.getElementById('footerDate').textContent=new Date().toLocaleDateString('es-CL',{year:'numeric',month:'long',day:'numeric'});
+
+// Render inicial
+renderAll();
+</script>
+</body>
+</html>
