@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard SAR 2019–2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#08121f; --bg2:#0c1726; --card:#102034; --card2:#132840;
+  --border:rgba(255,255,255,.08); --text:#e8eef8; --muted:#9eb0c8;
+  --accent:#22c5dc; --accent2:#00b4a0; --good:#39d98a; --warn:#f5a524; --bad:#ff6b6b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Segoe UI,Arial,sans-serif;background:linear-gradient(180deg,var(--bg),#07111d 55%,#091525);color:var(--text)}
+.container{max-width:1440px;margin:0 auto;padding:16px}
+.header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:14px;padding:14px 16px;border:1px solid var(--border);background:rgba(16,32,52,.72);border-radius:18px;backdrop-filter: blur(10px)}
+.title h1{margin:0;font-size:1.35rem}
+.title p{margin:4px 0 0;color:var(--muted);font-size:.92rem}
+.controls{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end;align-items:center}
+select,input[type=file],button{background:#0d1c2f;color:var(--text);border:1px solid var(--border);border-radius:12px;padding:9px 12px;font-size:.92rem}
+button{cursor:pointer}
+button:hover{border-color:rgba(34,197,220,.45)}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.tab-btn{padding:10px 14px;border-radius:12px;background:#0d1c2f;border:1px solid var(--border);color:var(--muted);font-weight:600}
+.tab-btn.active{background:linear-gradient(180deg,#17314d,#112540);color:#fff;border-color:rgba(34,197,220,.4)}
+.tab{display:none}
+.tab.active{display:block}
+.grid{display:grid;gap:12px}
+.grid.kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+.grid.two{grid-template-columns:1.15fr .85fr}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.card{background:rgba(16,32,52,.88);border:1px solid var(--border);border-radius:18px;padding:14px;min-width:0}
+.card h3{margin:0 0 10px;font-size:1rem}
+.sub{color:var(--muted);font-size:.86rem}
+.kpi .label{color:var(--muted);font-size:.84rem}
+.kpi .value{font-size:1.8rem;font-weight:800;margin-top:6px}
+.kpi .small{font-size:.82rem;color:var(--muted);margin-top:4px}
+.chart-wrap{height:260px}
+.chart-wrap.sm{height:220px}
+.table-wrap{max-height:310px;overflow:auto;border-radius:12px;border:1px solid rgba(255,255,255,.06)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:#12243a}
+thead th{position:sticky;top:0;background:#12243a;z-index:2}
+.badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:.78rem;background:#0d1c2f;border:1px solid var(--border);color:var(--muted)}
+.note{margin-top:8px;padding:10px 12px;border-radius:12px;background:#0d1c2f;border:1px dashed var(--border);color:var(--muted);font-size:.84rem}
+.inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pillbar{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:6px 9px;border-radius:999px;background:#0d1c2f;color:var(--muted);font-size:.8rem;border:1px solid var(--border)}
+.ok{color:var(--good)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+.status{font-size:.88rem;color:var(--muted)}
+.helper{font-size:.82rem;color:var(--muted)}
+.multi{min-height:120px}
+.center{text-align:center}
+@media (max-width:1100px){
+  .grid.kpis,.grid.two,.grid.three{grid-template-columns:1fr}
+  .header{flex-direction:column}
+  .controls{justify-content:flex-start}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="title">
+      <h1>Dashboard SAR 2019–2026</h1>
+      <p>Resumen ejecutivo, horarios, comparación y proyección de demanda.</p>
+    </div>
+    <div class="controls">
+      <select id="yearSelect"></select>
+      <button id="reloadBtn">Recargar</button>
+      <button id="loadBtn">Cargar JSON local</button>
+      <input id="fileInput" type="file" accept=".json" style="display:none">
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="resumen">Resumen</button>
+    <button class="tab-btn" data-tab="horarios">Horarios</button>
+    <button class="tab-btn" data-tab="comparacion">Comparación</button>
+    <button class="tab-btn" data-tab="proyeccion">Proyección</button>
+  </div>
+
+  <div id="status" class="status" style="margin:0 0 10px"></div>
+
+  <section id="resumen" class="tab active">
+    <div class="grid kpis">
+      <div class="card kpi"><div class="label">Total atendidos</div><div class="value" id="kpiAtendidos">-</div><div class="small" id="kpiAtendidosSub"></div></div>
+      <div class="card kpi"><div class="label">Total inscritos</div><div class="value" id="kpiInscritos">-</div><div class="small" id="kpiInscritosSub"></div></div>
+      <div class="card kpi"><div class="label">Total NSP</div><div class="value" id="kpiNsp">-</div><div class="small" id="kpiNspSub"></div></div>
+      <div class="card kpi"><div class="label">Cobertura triage C2–C5</div><div class="value" id="kpiCobertura">-</div><div class="small" id="kpiCoberturaSub"></div></div>
+    </div>
+
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Triage anual</h3>
+        <div class="chart-wrap"><canvas id="triageChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Motivos de consulta destacados</h3>
+        <div class="sub" id="motivosTopSub"></div>
+        <div class="chart-wrap"><canvas id="motivosChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Comparativo mensual del motivo seleccionado</h3>
+        <div class="inline" style="margin-bottom:8px">
+          <label class="sub" for="motivoSelect">Motivo</label>
+          <select id="motivoSelect"></select>
+        </div>
+        <div id="motivoTable" class="table-wrap"></div>
+      </div>
+      <div class="card">
+        <h3>Observaciones rápidas</h3>
+        <div class="pillbar" id="quickNotes"></div>
+        <div class="note">Los totales anuales se leen desde la hoja anual de origen. El selector <b>Todos</b> suma los años disponibles del consolidado.</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="horarios" class="tab">
+    <div class="inline" style="margin-bottom:12px">
+      <label class="sub" for="dailyYearSelect">Año con detalle diario</label>
+      <select id="dailyYearSelect"></select>
+      <span class="helper">Solo aparecen años con archivo diario disponible.</span>
+    </div>
+
+    <div class="grid kpis">
+      <div class="card kpi"><div class="label">Día exacto más demandado</div><div class="value" id="kpiPeakDate">-</div><div class="small" id="kpiPeakDateSub"></div></div>
+      <div class="card kpi"><div class="label">Día de semana crítico</div><div class="value" id="kpiPeakWeekday">-</div><div class="small" id="kpiPeakWeekdaySub"></div></div>
+      <div class="card kpi"><div class="label">Hora punta</div><div class="value" id="kpiPeakHour">-</div><div class="small" id="kpiPeakHourSub"></div></div>
+      <div class="card kpi"><div class="label">Tipo de día con mayor media</div><div class="value" id="kpiPeakType">-</div><div class="small" id="kpiPeakTypeSub"></div></div>
+    </div>
+
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Heatmap horario por día de semana</h3>
+        <div id="heatmapTable" class="table-wrap"></div>
+      </div>
+      <div class="card">
+        <h3>Top fechas críticas</h3>
+        <div id="criticalDatesTable" class="table-wrap"></div>
+      </div>
+    </div>
+
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Atendidos por hora</h3>
+        <div class="chart-wrap sm"><canvas id="hourlyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Atendidos por día de semana</h3>
+        <div class="chart-wrap sm"><canvas id="weekdayChart"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="comparacion" class="tab">
+    <div class="inline" style="margin-bottom:12px">
+      <div>
+        <div class="sub">Meses (máx. 4)</div>
+        <select id="compareMonths" class="multi" multiple size="6"></select>
+      </div>
+      <div>
+        <div class="sub">Años (máx. 3)</div>
+        <select id="compareYears" class="multi" multiple size="6"></select>
+      </div>
+      <div class="note">Esta vista compara <b>Total atendidos</b> entre los meses y años seleccionados.</div>
+    </div>
+    <div class="grid two">
+      <div class="card">
+        <h3>Comparación mensual</h3>
+        <div class="chart-wrap"><canvas id="compareChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Tabla comparativa</h3>
+        <div id="compareTable" class="table-wrap"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="proyeccion" class="tab">
+    <div class="grid three">
+      <div class="card">
+        <h3>Escenario exigente</h3>
+        <div class="sub">Demanda alta probable</div>
+        <div id="projHigh" class="value" style="font-size:1.7rem;margin-top:10px">-</div>
+      </div>
+      <div class="card">
+        <h3>Escenario base</h3>
+        <div class="sub">Promedio ponderado + tendencia</div>
+        <div id="projBase" class="value" style="font-size:1.7rem;margin-top:10px">-</div>
+      </div>
+      <div class="card">
+        <h3>Escenario favorable</h3>
+        <div class="sub">Menor presión esperada</div>
+        <div id="projLow" class="value" style="font-size:1.7rem;margin-top:10px">-</div>
+      </div>
+    </div>
+    <div class="grid two" style="margin-top:12px">
+      <div class="card">
+        <h3>Proyección abril–agosto</h3>
+        <div class="chart-wrap"><canvas id="projectionChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h3>Detalle por mes</h3>
+        <div id="projectionTable" class="table-wrap"></div>
+        <div class="note">La proyección usa el histórico consolidado de <b>Total atendidos</b> 2019–2025, con mayor peso a los últimos 3 años y un ajuste simple de tendencia.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+let DATA=null;
+let charts={};
+
+const fmtN = v => new Intl.NumberFormat('es-CL').format(Math.round(v||0));
+const fmtP = v => `${(v||0).toFixed(1)}%`;
+const byId = id => document.getElementById(id);
+const months = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+const weekdays = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+
+function setStatus(msg){ byId('status').textContent = msg || ''; }
+
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); charts[id]=null; } }
+
+function initTabs(){
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      byId(btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+function unique(arr){ return [...new Set(arr)]; }
+
+function yearModeRecords(selectedYear){
+  const annual = DATA.annual_records;
+  if(selectedYear === 'TODOS'){
+    const grouped = {};
+    for(const r of annual){
+      const k = `${r.label}||${r.section}||${r.item}`;
+      grouped[k] = (grouped[k] || 0) + (r.annual_total || 0);
+    }
+    return Object.entries(grouped).map(([k,v])=>{
+      const [label,section,item] = k.split('||');
+      return {year:'TODOS', label, section, item, annual_total:v};
+    });
+  }
+  return annual.filter(r=>String(r.year)===String(selectedYear));
+}
+
+function monthlyModeRecords(selectedYear){
+  if(selectedYear === 'TODOS'){
+    const grouped = {};
+    for(const r of DATA.monthly_records){
+      const k = `${r.section}||${r.item}||${r.month_index}`;
+      grouped[k] = (grouped[k] || 0) + (r.value || 0);
+    }
+    return Object.entries(grouped).map(([k,v])=>{
+      const [section,item,month_index] = k.split('||');
+      return {year:'TODOS', section, item, month_index:+month_index, month:months[(+month_index)-1], value:v};
+    });
+  }
+  return DATA.monthly_records.filter(r=>String(r.year)===String(selectedYear));
+}
+
+function annualValue(records, label){
+  const rec = records.find(r=>r.label===label);
+  return rec ? rec.annual_total : 0;
+}
+
+function triageValues(records){
+  return ['C1','C2','C3','C4','C5'].map(cat=>{
+    const rec = records.find(r=>r.section==='triage' && r.item===cat);
+    return rec ? rec.annual_total : 0;
+  });
+}
+
+function renderYearSelect(){
+  const years = DATA.metadata.consolidated_years || [];
+  byId('yearSelect').innerHTML = ['<option value="TODOS">Todos</option>', ...years.map(y=>`<option value="${y}" ${y===2026?'selected':''}>${y}</option>`)].join('');
+  byId('yearSelect').addEventListener('change', renderResumen);
+}
+
+function renderResumen(){
+  const y = byId('yearSelect').value;
+  const annual = yearModeRecords(y);
+  const monthly = monthlyModeRecords(y);
+
+  const atendidos = annualValue(annual,'TOTAL ATENDIDOS');
+  const inscritos = annualValue(annual,'TOTAL INSCRITOS');
+  const nsp = annualValue(annual,'TOTAL NSP');
+  const triage = triageValues(annual);
+  const triageC2C5 = triage.slice(1).reduce((a,b)=>a+b,0);
+  const cobertura = atendidos ? (triageC2C5/atendidos*100) : 0;
+
+  byId('kpiAtendidos').textContent = fmtN(atendidos);
+  byId('kpiAtendidosSub').textContent = y==='TODOS' ? 'Suma de años disponibles' : `Año ${y}`;
+  byId('kpiInscritos').textContent = fmtN(inscritos);
+  byId('kpiInscritosSub').textContent = `Diferencia vs atendidos: ${fmtN(inscritos-atendidos)}`;
+  byId('kpiNsp').textContent = fmtN(nsp);
+  byId('kpiNspSub').textContent = inscritos ? `NSP / inscritos: ${fmtP((nsp/inscritos)*100)}` : '';
+  byId('kpiCobertura').textContent = fmtP(cobertura);
+  byId('kpiCoberturaSub').textContent = `C2–C5: ${fmtN(triageC2C5)} de ${fmtN(atendidos)}`;
+
+  destroyChart('triageChart');
+  charts.triageChart = new Chart(byId('triageChart'),{
+    type:'bar',
+    data:{labels:['C1','C2','C3','C4','C5'], datasets:[{label:'Triage', data:triage}]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#c7d5ea'}}, y:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}}
+    }
+  });
+
+  const allAnnual = y==='TODOS' ? DATA.annual_records : annual;
+  const topMotives = DATA.metadata.top_motives_historicos || [];
+  byId('motivoSelect').innerHTML = topMotives.map((m,i)=>`<option value="${m}" ${i===0?'selected':''}>${m}</option>`).join('');
+  byId('motivosTopSub').textContent = topMotives.join(' · ');
+
+  const motiveTotals = topMotives.map(m=>{
+    return allAnnual.filter(r=>r.section==='motivo_consulta' && r.item===m).reduce((a,b)=>a+(b.annual_total||0),0);
+  });
+  destroyChart('motivosChart');
+  charts.motivosChart = new Chart(byId('motivosChart'),{
+    type:'bar',
+    data:{labels:topMotives, datasets:[{label:'Total anual', data:motiveTotals}]},
+    options:{
+      indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}, y:{ticks:{color:'#c7d5ea'}}}
+    }
+  });
+
+  renderMotivoTable();
+  byId('motivoSelect').onchange = renderMotivoTable;
+
+  const quick = [];
+  const triMax = Math.max(...triage.slice(1));
+  const triMaxIdx = triage.slice(1).indexOf(triMax) + 2;
+  quick.push(`<span class="pill">Triage dominante: C${triMaxIdx} (${fmtN(triMax)})</span>`);
+  const peaks = months.map((m,idx)=>({m, v:(monthly.find(r=>r.section==='totales' && r.item==='Atendidos' && r.month_index===idx+1)||{}).value||0}));
+  peaks.sort((a,b)=>b.v-a.v);
+  if(peaks[0]) quick.push(`<span class="pill">Mes punta atendidos: ${peaks[0].m} (${fmtN(peaks[0].v)})</span>`);
+  if(peaks[1]) quick.push(`<span class="pill">2° mes: ${peaks[1].m} (${fmtN(peaks[1].v)})</span>`);
+  quick.push(`<span class="pill">NSP total: ${fmtN(nsp)}</span>`);
+  quick.push(`<span class="pill">Cobertura triage: ${fmtP(cobertura)}</span>`);
+  byId('quickNotes').innerHTML = quick.join('');
+}
+
+function renderMotivoTable(){
+  const motivo = byId('motivoSelect').value;
+  let html = '<table><thead><tr><th>Año</th>'+months.map(m=>`<th>${m.slice(0,3)}</th>`).join('')+'<th>Total</th></tr></thead><tbody>';
+  for(const y of DATA.metadata.consolidated_years){
+    const vals = months.map((m,idx)=>{
+      const rec = DATA.monthly_records.find(r=>r.year===y && r.section==='motivo_consulta' && r.item===motivo && r.month_index===idx+1);
+      return rec ? rec.value : 0;
+    });
+    const total = DATA.annual_records.find(r=>r.year===y && r.section==='motivo_consulta' && r.item===motivo);
+    html += `<tr><td>${y}</td>${vals.map(v=>`<td>${fmtN(v)}</td>`).join('')}<td><b>${fmtN(total?total.annual_total:0)}</b></td></tr>`;
+  }
+  html += '</tbody></table>';
+  byId('motivoTable').innerHTML = html;
+}
+
+function renderDailyYearSelect(){
+  const years = DATA.metadata.daily_years_available || [];
+  if(!years.length){
+    byId('dailyYearSelect').innerHTML = '<option>No disponible</option>';
+    return;
+  }
+  byId('dailyYearSelect').innerHTML = years.map(y=>`<option value="${y}" ${y===years[years.length-1]?'selected':''}>${y}</option>`).join('');
+  byId('dailyYearSelect').addEventListener('change', renderHorarios);
+}
+
+function getDailyFiltered(){
+  const y = +byId('dailyYearSelect').value;
+  return DATA.daily_records.filter(r=>r.year===y && r.metric==='atendidos');
+}
+
+function renderHorarios(){
+  const recs = getDailyFiltered();
+  if(!recs.length){
+    byId('heatmapTable').innerHTML = '<div class="note">No hay datos diarios disponibles.</div>';
+    return;
+  }
+  const totalsByDate = {};
+  const totalsByHour = {};
+  const totalsByWeekday = {};
+  const countsByType = {};
+  const sumByType = {};
+  const heat = {};
+
+  for(const r of recs){
+    if(r.hour==='TOTAL'){
+      totalsByDate[r.date] = (totalsByDate[r.date]||0) + r.value;
+      totalsByWeekday[r.weekday] = (totalsByWeekday[r.weekday]||0) + r.value;
+      countsByType[r.day_type] = (countsByType[r.day_type]||0) + 1;
+      sumByType[r.day_type] = (sumByType[r.day_type]||0) + r.value;
+    } else {
+      totalsByHour[r.hour] = (totalsByHour[r.hour]||0) + r.value;
+      const hk = `${r.weekday}||${r.hour}`;
+      heat[hk] = (heat[hk]||0) + r.value;
+    }
+  }
+  const peakDate = Object.entries(totalsByDate).sort((a,b)=>b[1]-a[1])[0];
+  const peakWeekday = Object.entries(totalsByWeekday).sort((a,b)=>b[1]-a[1])[0];
+  const peakHour = Object.entries(totalsByHour).sort((a,b)=>b[1]-a[1])[0];
+  const typeMeans = Object.keys(sumByType).map(k=>[k, sumByType[k]/countsByType[k]]);
+  const peakType = typeMeans.sort((a,b)=>b[1]-a[1])[0];
+
+  byId('kpiPeakDate').textContent = peakDate ? peakDate[0] : '-';
+  byId('kpiPeakDateSub').textContent = peakDate ? `${fmtN(peakDate[1])} atendidos` : '';
+  byId('kpiPeakWeekday').textContent = peakWeekday ? peakWeekday[0] : '-';
+  byId('kpiPeakWeekdaySub').textContent = peakWeekday ? `${fmtN(peakWeekday[1])} en el año` : '';
+  byId('kpiPeakHour').textContent = peakHour ? peakHour[0] : '-';
+  byId('kpiPeakHourSub').textContent = peakHour ? `${fmtN(peakHour[1])} acumulados` : '';
+  byId('kpiPeakType').textContent = peakType ? peakType[0] : '-';
+  byId('kpiPeakTypeSub').textContent = peakType ? `${fmtN(peakType[1])} promedio diario` : '';
+
+  const hoursOrdered = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00'];
+  let maxHeat = 0;
+  for(const k in heat){ if(heat[k]>maxHeat) maxHeat=heat[k]; }
+  let heatHtml = '<table><thead><tr><th>Hora</th>'+weekdays.map(w=>`<th>${w.slice(0,3)}</th>`).join('')+'</tr></thead><tbody>';
+  for(const h of hoursOrdered){
+    heatHtml += `<tr><td>${h}</td>`;
+    for(const w of weekdays){
+      const v = heat[`${w}||${h}`] || 0;
+      const alpha = maxHeat ? (v/maxHeat)*0.85 : 0;
+      heatHtml += `<td style="background:rgba(34,197,220,${alpha.toFixed(3)})">${fmtN(v)}</td>`;
+    }
+    heatHtml += '</tr>';
+  }
+  heatHtml += '</tbody></table>';
+  byId('heatmapTable').innerHTML = heatHtml;
+
+  const critical = Object.entries(totalsByDate).sort((a,b)=>b[1]-a[1]).slice(0,15).map(([date,v])=>{
+    const sample = recs.find(r=>r.date===date && r.hour==='TOTAL');
+    return {date, value:v, weekday: sample?sample.weekday:'', day_type: sample?sample.day_type:''};
+  });
+  let critHtml = '<table><thead><tr><th>Fecha</th><th>Día</th><th>Tipo</th><th>Atendidos</th></tr></thead><tbody>';
+  for(const r of critical){
+    critHtml += `<tr><td>${r.date}</td><td>${r.weekday}</td><td>${r.day_type}</td><td>${fmtN(r.value)}</td></tr>`;
+  }
+  critHtml += '</tbody></table>';
+  byId('criticalDatesTable').innerHTML = critHtml;
+
+  destroyChart('hourlyChart');
+  charts.hourlyChart = new Chart(byId('hourlyChart'),{
+    type:'bar',
+    data:{labels:hoursOrdered, datasets:[{label:'Atendidos', data:hoursOrdered.map(h=>totalsByHour[h]||0)}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#c7d5ea', maxRotation:0, autoSkip:true}}, y:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+
+  destroyChart('weekdayChart');
+  charts.weekdayChart = new Chart(byId('weekdayChart'),{
+    type:'bar',
+    data:{labels:weekdays, datasets:[{label:'Atendidos', data:weekdays.map(w=>totalsByWeekday[w]||0)}]},
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{ticks:{color:'#c7d5ea'}}, y:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+}
+
+function renderComparisonSelectors(){
+  byId('compareMonths').innerHTML = months.map((m,i)=>`<option value="${i+1}" ${i<4?'selected':''}>${m}</option>`).join('');
+  byId('compareYears').innerHTML = DATA.metadata.consolidated_years.map((y,i,arr)=>`<option value="${y}" ${i>=arr.length-3?'selected':''}>${y}</option>`).join('');
+  byId('compareMonths').addEventListener('change', enforceLimitsAndRenderComparison);
+  byId('compareYears').addEventListener('change', enforceLimitsAndRenderComparison);
+}
+
+function selectedValues(selectId){
+  return [...byId(selectId).selectedOptions].map(o=>o.value);
+}
+
+function enforceLimits(selectId, max){
+  const sel = byId(selectId);
+  const opts = [...sel.options].filter(o=>o.selected);
+  if(opts.length<=max) return;
+  opts[opts.length-1].selected = false;
+}
+
+function enforceLimitsAndRenderComparison(){
+  enforceLimits('compareMonths',4);
+  enforceLimits('compareYears',3);
+  renderComparison();
+}
+
+function renderComparison(){
+  const selMonths = selectedValues('compareMonths').map(Number).sort((a,b)=>a-b);
+  const selYears = selectedValues('compareYears').map(Number).sort((a,b)=>a-b);
+  const rows = selYears.map(y=>({
+    year:y,
+    vals:selMonths.map(m=>{
+      const rec = DATA.monthly_records.find(r=>r.year===y && r.label==='TOTAL ATENDIDOS' && r.month_index===m);
+      return rec ? rec.value : 0;
+    })
+  }));
+
+  destroyChart('compareChart');
+  charts.compareChart = new Chart(byId('compareChart'),{
+    type:'line',
+    data:{
+      labels:selMonths.map(m=>months[m-1]),
+      datasets:rows.map(r=>({label:String(r.year), data:r.vals, tension:.2}))
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#c7d5ea'}}}, scales:{x:{ticks:{color:'#c7d5ea'}}, y:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+
+  let html = '<table><thead><tr><th>Año</th>'+selMonths.map(m=>`<th>${months[m-1].slice(0,3)}</th>`).join('')+'<th>Total</th></tr></thead><tbody>';
+  for(const r of rows){
+    const total = r.vals.reduce((a,b)=>a+b,0);
+    html += `<tr><td>${r.year}</td>${r.vals.map(v=>`<td>${fmtN(v)}</td>`).join('')}<td><b>${fmtN(total)}</b></td></tr>`;
+  }
+  html += '</tbody></table>';
+  byId('compareTable').innerHTML = html;
+}
+
+function renderProjection(){
+  const p = DATA.projections || [];
+  byId('projHigh').textContent = fmtN(p.reduce((a,b)=>a+(b.high||0),0));
+  byId('projBase').textContent = fmtN(p.reduce((a,b)=>a+(b.base||0),0));
+  byId('projLow').textContent = fmtN(p.reduce((a,b)=>a+(b.low||0),0));
+
+  destroyChart('projectionChart');
+  charts.projectionChart = new Chart(byId('projectionChart'),{
+    type:'line',
+    data:{
+      labels:p.map(r=>r.month),
+      datasets:[
+        {label:'Exigente', data:p.map(r=>r.high), tension:.25},
+        {label:'Base', data:p.map(r=>r.base), tension:.25},
+        {label:'Favorable', data:p.map(r=>r.low), tension:.25}
+      ]
+    },
+    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{labels:{color:'#c7d5ea'}}}, scales:{x:{ticks:{color:'#c7d5ea'}}, y:{ticks:{color:'#c7d5ea'}, grid:{color:'rgba(255,255,255,.06)'}}}}
+  });
+
+  let html = '<table><thead><tr><th>Mes</th><th>Favorable</th><th>Base</th><th>Exigente</th></tr></thead><tbody>';
+  for(const r of p){
+    html += `<tr><td>${r.month}</td><td>${fmtN(r.low)}</td><td><b>${fmtN(r.base)}</b></td><td>${fmtN(r.high)}</td></tr>`;
+  }
+  html += '</tbody></table>';
+  byId('projectionTable').innerHTML = html;
+}
+
+function renderAll(){
+  renderYearSelect();
+  renderDailyYearSelect();
+  renderComparisonSelectors();
+  renderResumen();
+  renderHorarios();
+  renderComparison();
+  renderProjection();
+  const dailyYears = (DATA.metadata.daily_years_available || []).join(', ') || 'sin detalle diario';
+  setStatus(`JSON cargado correctamente. Consolidado: ${DATA.metadata.consolidated_years.join(', ')} · Detalle diario: ${dailyYears}.`);
+}
+
+async function tryLoad(){
+  const candidates = ['sar_dashboard_master.json','sar_dashboard_plus_2026_v2.json','sar_dashboard_plus_2026.json','sar_actualizado_totales_origen.json','sar.json'];
+  let lastErr = null;
+  for(const file of candidates){
+    try{
+      const res = await fetch(file, {cache:'no-store'});
+      if(!res.ok) continue;
+      const j = await res.json();
+      if(j && j.monthly_records && j.annual_records){
+        DATA = j;
+        renderAll();
+        return;
+      }
+    }catch(err){ lastErr = err; }
+  }
+  setStatus('No se pudo cargar el JSON automáticamente. Usa "Cargar JSON local" si abriste este HTML desde tu computador.');
+}
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  initTabs();
+  byId('reloadBtn').addEventListener('click', ()=>location.reload());
+  byId('loadBtn').addEventListener('click', ()=>byId('fileInput').click());
+  byId('fileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const txt = await file.text();
+    DATA = JSON.parse(txt);
+    renderAll();
+  });
+  tryLoad();
+});
+</script>
+</body>
+</html>
