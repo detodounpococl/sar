@@ -11,61 +11,66 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
-.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);padding:12px 18px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;gap:12px;flex-wrap:wrap}
+.header,.toolbar,.tabbar,.content,.footer{padding-left:16px;padding-right:16px}
+.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);padding-top:10px;padding-bottom:10px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;gap:10px;flex-wrap:wrap}
 .header-left{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .badge{background:linear-gradient(135deg,var(--teal) 0%,var(--cyan) 100%);color:#03131C;padding:6px 10px;border-radius:999px;font:700 10px var(--mono);text-transform:uppercase;letter-spacing:1px}
-.title h1{font-size:17px;line-height:1.1}
-.title p{color:var(--muted);font-size:11px;margin-top:3px}
+.title h1{font-size:15px;line-height:1.1}
+.title p{color:var(--muted);font-size:11px;margin-top:3px;max-width:920px}
 .context-badge,.status{padding:7px 10px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);font:600 11px var(--mono);color:var(--teal2)}
-.toolbar,.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:8px 18px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.toolbar,.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);padding-top:8px;padding-bottom:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
 .ybtn,.tabbtn,.ghostbtn,select{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font:600 11px var(--mono);cursor:pointer;transition:.15s}
 select{background:var(--card);color:var(--text);max-width:220px}
-#cmpMonths,#cmpYears{height:90px}
-.ybtn:hover,.tabbtn:hover,.ghostbtn:hover{border-color:rgba(0,212,188,.5);color:var(--text)}
-.ybtn.active,.tabbtn.active,.ghostbtn.active{background:linear-gradient(135deg,rgba(0,180,160,.18),rgba(34,197,220,.12));color:var(--teal2);border-color:rgba(0,212,188,.45)}
-.content{padding:16px 18px 28px}
+#cmpMonths,#cmpYears{height:84px}
+.ybtn:hover,.tabbtn:hover,.ghostbtn:hover{border-color:rgba(0,212,188,.45);color:var(--text)}
+.ybtn.active,.tabbtn.active,.ghostbtn.active{background:linear-gradient(135deg,rgba(0,180,160,.16),rgba(34,197,220,.10));color:var(--teal2);border-color:rgba(0,212,188,.40)}
+.content{padding-top:14px;padding-bottom:24px;max-width:1600px;margin:0 auto}
 .section{display:none}
 .section.active{display:block}
-.grid{display:grid;gap:14px;align-items:start}
-.grid.kpis{grid-template-columns:repeat(auto-fit,minmax(210px,1fr));margin-bottom:14px}
-.grid.two{grid-template-columns:repeat(auto-fit,minmax(320px,1fr));align-items:start}
-.grid.three{grid-template-columns:repeat(auto-fit,minmax(280px,1fr));align-items:start}
-.card{background:linear-gradient(180deg,var(--card) 0%,#0B1A2C 100%);border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 8px 24px rgba(0,0,0,.16);min-width:0;align-self:start}
+.grid{display:grid;gap:12px;align-items:start}
+.grid.kpis{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:12px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}
+.grid.three{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}
+.card{background:linear-gradient(180deg,var(--card) 0%,#0B1A2C 100%);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 8px 20px rgba(0,0,0,.14);min-width:0;align-self:start}
 .kpi .kpi-label{font:600 10px var(--mono);letter-spacing:1px;color:var(--muted);text-transform:uppercase}
-.kpi .kpi-value{font-size:24px;font-weight:800;line-height:1;margin:10px 0 4px}
-.kpi .kpi-sub{color:var(--muted);font-size:11px}
-.card h3{font-size:14px;margin-bottom:3px}
-.sub{color:var(--muted);font-size:11px;margin-bottom:10px}
-.chart-box{position:relative;height:250px;min-height:250px;max-height:250px}
-.chart-box.sm{height:220px;min-height:220px;max-height:220px}
+.kpi .kpi-value{font-size:18px;font-weight:800;line-height:1;margin:10px 0 4px}
+.kpi .kpi-sub{color:var(--muted);font-size:10px}
+.card h3{font-size:13px;margin-bottom:2px}
+.sub{color:var(--muted);font-size:10px;margin-bottom:8px}
+.chart-box{position:relative;height:205px;min-height:205px;max-height:205px}
+.chart-box.sm{height:180px;min-height:180px;max-height:180px}
 .chart-box canvas{width:100%!important;height:100%!important;display:block}
-.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border);max-height:340px}
-table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.01)}
-th,td{padding:8px 10px;border-bottom:1px solid var(--border);font-size:11px;white-space:nowrap}
-th{position:sticky;top:0;background:#0C2034;color:var(--teal2);font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.7px;z-index:1}
+.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--border);max-height:255px;background:rgba(255,255,255,.01)}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px 9px;border-bottom:1px solid var(--border);font-size:10.5px;white-space:nowrap}
+th{position:sticky;top:0;background:#0C2034;color:var(--teal2);font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;z-index:1}
 td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 tr:hover td{background:rgba(255,255,255,.015)}
 .heat{text-align:right;font-variant-numeric:tabular-nums;border-radius:6px}
-.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:10px}
-.helper{color:var(--muted);font-size:11px;line-height:1.45}
-.mini{font-size:11px;color:var(--muted)}
-.note{padding:10px 12px;border-radius:12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.18);color:#FFD08A;font-size:12px;line-height:1.45}
-.ok{background:rgba(76,175,125,.08);border-color:rgba(76,175,125,.2);color:#B8F5CF}
+.controls{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:8px}
+.helper{color:var(--muted);font-size:10.5px;line-height:1.4}
+.mini{font-size:10px;color:var(--muted)}
+.note{padding:8px 10px;border-radius:10px;background:rgba(245,166,35,.07);border:1px solid rgba(245,166,35,.16);color:#FFD08A;font-size:11px;line-height:1.4}
+.ok{background:rgba(76,175,125,.06);border-color:rgba(76,175,125,.18);color:#B8F5CF}
 .error{background:rgba(240,80,96,.08);border-color:rgba(240,80,96,.2);color:#FFB4BE}
 .badge-soft{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(0,180,160,.12);border:1px solid var(--border);font:600 10px var(--mono);color:var(--teal2)}
 .hidden{display:none !important}
-.footer{padding:0 18px 22px;color:var(--muted);font-size:11px}
+.footer{max-width:1600px;margin:0 auto;padding-top:0;padding-bottom:18px;color:var(--muted);font-size:10px}
 canvas{max-height:none}
-#resumenNotas{display:grid;gap:8px}
-#resumenNotas div{padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02)}
-@media(max-width:900px){
-  .content{padding:14px}
-  .toolbar,.tabbar,.header,.footer{padding-left:14px;padding-right:14px}
-  .title h1{font-size:15px}
+#resumenNotas{display:grid;gap:6px}
+#resumenNotas div{padding:8px 9px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02)}
+@media(max-width:1200px){
+  .grid.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
   .grid.two,.grid.three{grid-template-columns:1fr}
-  .chart-box,.chart-box.sm{height:210px;min-height:210px;max-height:210px}
-  #cmpMonths,#cmpYears{height:78px}
+}
+@media(max-width:760px){
+  .header,.toolbar,.tabbar,.content,.footer{padding-left:12px;padding-right:12px}
+  .title h1{font-size:14px}
+  .title p{font-size:10px}
+  .grid.kpis{grid-template-columns:1fr}
+  .chart-box,.chart-box.sm{height:190px;min-height:190px;max-height:190px}
+  #cmpMonths,#cmpYears{height:72px}
 }
 </style>
 </head>
@@ -74,8 +79,8 @@ canvas{max-height:none}
   <div class="header-left">
     <div class="badge">SAR · 2019–2026</div>
     <div class="title">
-      <h1>Dashboard operativo y directivo</h1>
-      <p>Histórico oficial 2019–2026, detalle diario 2025 para Horarios, comparación multi-período y proyección otoño/invierno.</p>
+      <h1>Dashboard SAR operativo</h1>
+      <p>Resumen ejecutivo, horarios 2025, comparación acotada y proyección otoño-invierno.</p>
     </div>
   </div>
   <div class="context-badge" id="yearBadge">—</div>
@@ -118,7 +123,7 @@ canvas{max-height:none}
       <div class="card"><h3>Atendidos por mes</h3><div class="sub">Estacionalidad y presión asistencial.</div><div class="chart-box"><canvas id="chartResumenAtendidos" height="130"></canvas></div></div>
       <div class="card"><h3>Triage anual</h3><div class="sub">Composición C1–C5 para el año seleccionado o el acumulado total.</div><div class="chart-box"><canvas id="chartResumenTriage" height="130"></canvas></div></div>
       <div class="card"><h3>Motivos de consulta destacados</h3><div class="sub">Top 5 según el período seleccionado.</div><div class="chart-box"><canvas id="chartResumenMotivos" height="130"></canvas></div></div>
-      <div class="card"><h3>Lectura ejecutiva</h3><div class="sub">Señales para reforzar cobertura.</div><div id="resumenNotas" class="helper"></div></div>
+      <div class="card"><h3>Síntesis ejecutiva</h3><div class="sub">Señales para reforzar cobertura.</div><div id="resumenNotas" class="helper"></div></div>
     </div>
   </section>
 
@@ -165,7 +170,7 @@ canvas{max-height:none}
 
   <section class="section" id="section-horarios">
     <div class="note ok" style="margin-bottom:14px">
-      Esta pestaña ahora usa <strong>detalle diario real 2025</strong>: permite identificar <strong>día exacto</strong>, <strong>día de la semana</strong>, <strong>hora crítica</strong> y distinguir entre <strong>hábil</strong>, <strong>fin de semana</strong> y <strong>feriado</strong>. El feriado local del <strong>20 de agosto</strong> para Chillán y Chillán Viejo quedó incorporado.
+      Base diaria 2025: identifica fecha crítica, día de semana, hora punta y diferencia entre día hábil, fin de semana y feriado. Incluye 20 de agosto como feriado local.
     </div>
     <div class="controls">
       <label class="label">Métrica</label>
@@ -212,11 +217,11 @@ canvas{max-height:none}
   </section>
 
   <section class="section" id="section-proyeccion">
-    <div class="note" style="margin-bottom:14px">La proyección usa todos los años disponibles y el impulso real observado en 2026. Se muestran tres escenarios de demanda para <strong>abril a agosto</strong>: <strong>exigente</strong>, <strong>base</strong> y <strong>favorable</strong>.</div>
+    <div class="note" style="margin-bottom:14px">Proyección abril-agosto con tres escenarios para apoyar refuerzo de dotación y cobertura estacional.</div>
     <div class="grid kpis">
-      <div class="card kpi"><div class="kpi-label">Escenario exigente</div><div class="kpi-value" id="projHighTotal">—</div><div class="kpi-sub">Volumen acumulado abril–agosto</div></div>
-      <div class="card kpi"><div class="kpi-label">Escenario base</div><div class="kpi-value" id="projBaseTotal">—</div><div class="kpi-sub">Volumen acumulado abril–agosto</div></div>
-      <div class="card kpi"><div class="kpi-label">Escenario favorable</div><div class="kpi-value" id="projLowTotal">—</div><div class="kpi-sub">Volumen acumulado abril–agosto</div></div>
+      <div class="card kpi"><div class="kpi-label">Demanda alta</div><div class="kpi-value" id="projHighTotal">—</div><div class="kpi-sub">Acumulado abril-agosto</div></div>
+      <div class="card kpi"><div class="kpi-label">Demanda esperada</div><div class="kpi-value" id="projBaseTotal">—</div><div class="kpi-sub">Acumulado abril-agosto</div></div>
+      <div class="card kpi"><div class="kpi-label">Demanda controlada</div><div class="kpi-value" id="projLowTotal">—</div><div class="kpi-sub">Acumulado abril-agosto</div></div>
     </div>
     <div class="grid two">
       <div class="card"><h3>Curvas de proyección</h3><div class="sub">Proyección mensual 2026.</div><div class="chart-box"><canvas id="chartProyeccion" height="130"></canvas></div></div>
