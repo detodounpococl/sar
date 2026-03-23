@@ -61,6 +61,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .chart-wrap{position:relative;height:290px}
 .chart-wrap.short{height:220px}
 .table-wrap{overflow:auto}
+.selector{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font:600 12px var(--mono)}
+.heatmap-table th,.heatmap-table td{text-align:right}
+.heatmap-table th:first-child,.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+.heat{font-weight:700;border-radius:6px}
 table{width:100%;border-collapse:collapse}
 th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
 th{text-align:left;font:600 10px var(--mono);text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
@@ -180,7 +184,30 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-size:11px}
     </div>
     <div class="grid-2-eq">
       <div class="card"><div class="chart-title">Distribución mensual de triage</div><div class="chart-sub">C2 a C5</div><div class="chart-wrap"><canvas id="triageMonthlyChart"></canvas></div></div>
-      <div class="card"><div class="chart-title">Motivos de consulta destacados</div><div class="chart-sub">Respiratorio, lesiones, alcoholemias, mordedura de perro y accidentes en el hogar</div><div class="chart-wrap"><canvas id="motivosChart"></canvas></div></div>
+      <div class="card"><div class="chart-title">Motivos de consulta destacados</div><div class="chart-sub">Top 5 histórico, con foco anual o total acumulado</div><div class="chart-wrap"><canvas id="motivosChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+        <div>
+          <div class="chart-title">Comparador mensual por motivo</div>
+          <div class="chart-sub">Eje X: meses · Eje Y: años · permite revisar los 5 motivos con mayor volumen histórico</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="label">Motivo</span>
+          <select id="motivoSelect" class="selector"></select>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="heatmap-table">
+          <thead><tr>
+            <th>Año</th>
+            <th class="num">Ene</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Abr</th><th class="num">May</th><th class="num">Jun</th>
+            <th class="num">Jul</th><th class="num">Ago</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th>
+            <th class="num">Total</th>
+          </tr></thead>
+          <tbody id="motivoCompareBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -220,6 +247,7 @@ td.num,th.num{text-align:right;font-family:var(--mono);font-size:11px}
 <script>
 let DATA = null;
 let currentYear = 2026;
+let selectedMotivo = null;
 const charts = {};
 
 const MONTHS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
@@ -252,7 +280,21 @@ function annualOrSum(section,item,year){
   const acc = annual(section,item,year);
   return acc || series(section,item,year).reduce((a,b)=>a+b,0);
 }
+
+function getSelectedYears(){
+  return currentYear === 'TODOS' ? DATA.metadata.years : [currentYear];
+}
+function getYearLabel(){
+  return currentYear === 'TODOS' ? `Todos (${DATA.metadata.years[0]}–${DATA.metadata.years[DATA.metadata.years.length-1]})` : String(currentYear);
+}
+function seriesSelected(section, item){
+  return MONTHS.map(m => getSelectedYears().reduce((sum,y)=>sum+getValue(section,item,y,m),0));
+}
+function annualSelected(section,item){
+  return getSelectedYears().reduce((sum,y)=>sum+annualOrSum(section,item,y),0);
+}
 function yoyText(section,item,year){
+  if(year === 'TODOS') return `Acumulado ${DATA.metadata.years[0]}–${DATA.metadata.years[DATA.metadata.years.length-1]}`;
   const years = DATA.metadata.years;
   const idx = years.indexOf(year);
   if(idx<=0) return 'Sin comparación previa';
@@ -265,7 +307,8 @@ function yoyText(section,item,year){
 function renderYearButtons(){
   const wrap = el('yearButtons');
   wrap.innerHTML = '';
-  DATA.metadata.years.forEach(y => {
+  const allYears = ['TODOS', ...DATA.metadata.years];
+  allYears.forEach(y => {
     const b = document.createElement('button');
     b.className = 'ybtn' + (y===currentYear ? ' active':'');
     b.textContent = y;
@@ -275,15 +318,50 @@ function renderYearButtons(){
 }
 function setText(id, value){ el(id).textContent = value; }
 
+function getTopMotivos(limit=5){
+  const totals = {};
+  DATA.records
+    .filter(r => r.section==='motivo_consulta' && r.month==='ACUMULADO')
+    .forEach(r => { totals[r.item] = (totals[r.item]||0) + Number(r.value||0); });
+  return Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([item])=>item);
+}
+function initMotivoSelector(){
+  const top = getTopMotivos(5);
+  if(!selectedMotivo || !top.includes(selectedMotivo)) selectedMotivo = top[0] || null;
+  const sel = el('motivoSelect');
+  if(!sel) return;
+  sel.innerHTML = top.map(item => `<option value="${item.replace(/"/g,'&quot;')}">${item}</option>`).join('');
+  sel.value = selectedMotivo;
+  sel.onchange = () => { selectedMotivo = sel.value; renderTriage(); };
+}
+function renderMotivoCompareTable(){
+  if(!selectedMotivo) return;
+  const years = DATA.metadata.years;
+  const rows = years.map(y => {
+    const vals = series('motivo_consulta', selectedMotivo, y);
+    return {year:y, vals, total: vals.reduce((a,b)=>a+b,0)};
+  });
+  const maxVal = Math.max(1, ...rows.flatMap(r=>r.vals));
+  el('motivoCompareBody').innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.year}</strong></td>
+      ${r.vals.map(v=>{
+        const alpha = Math.max(0.08, v / maxVal);
+        return `<td class="num heat" style="background:rgba(0,180,160,${alpha.toFixed(3)});">${fmtInt(v)}</td>`;
+      }).join('')}
+      <td class="num"><strong>${fmtInt(r.total)}</strong></td>
+    </tr>
+  `).join('');
+}
 function renderResumen(){
   const y = currentYear;
-  const ins = annualOrSum('kpi_general','TOTAL INSCRITOS',y);
-  const ate = annualOrSum('kpi_general','TOTAL ATENDIDOS',y);
-  const nsp = annualOrSum('kpi_general','TOTAL NSP',y);
-  const ped = annualOrSum('kpi_general','ATENDIDOS <15 AÑOS',y);
-  const adu = annualOrSum('kpi_general','ATENDIDOS ≥15 AÑOS',y);
-  const nspPed = annualOrSum('kpi_general','NSP PEDIÁTRICOS',y);
-  const nspAdu = annualOrSum('kpi_general','NSP ADULTOS',y);
+  const ins = annualSelected('kpi_general','TOTAL INSCRITOS');
+  const ate = annualSelected('kpi_general','TOTAL ATENDIDOS');
+  const nsp = annualSelected('kpi_general','TOTAL NSP');
+  const ped = annualSelected('kpi_general','ATENDIDOS <15 AÑOS');
+  const adu = annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS');
+  const nspPed = annualSelected('kpi_general','NSP PEDIÁTRICOS');
+  const nspAdu = annualSelected('kpi_general','NSP ADULTOS');
   const performance = ins ? (ate/ins)*100 : 0;
 
   setText('kpiI', fmtInt(ins));
@@ -294,15 +372,15 @@ function renderResumen(){
   setText('kpiASub', yoyText('kpi_general','TOTAL ATENDIDOS',y));
   setText('kpiNSub', yoyText('kpi_general','TOTAL NSP',y));
   setText('kpiRSub', ins ? `${fmtInt(ins-nsp)} registrados efectivos sobre inscritos` : 'Sin base');
-  setText('periodBadge', `Año seleccionado: ${y}`);
-  setText('yearBadge', `${y} activo`);
+  setText('periodBadge', `Período seleccionado: ${getYearLabel()}`);
+  setText('yearBadge', `${getYearLabel()} activo`);
 
   makeChart('monthlyChart',{
     type:'line',
     data:{labels:MONTHS,datasets:[
-      {label:'Inscritos',data:series('kpi_general','TOTAL INSCRITOS',y),borderColor:'#22C5DC',backgroundColor:'transparent',tension:.25},
-      {label:'Atendidos',data:series('kpi_general','TOTAL ATENDIDOS',y),borderColor:'#4CAF7D',backgroundColor:'transparent',tension:.25},
-      {label:'NSP',data:series('kpi_general','TOTAL NSP',y),borderColor:'#F5A623',backgroundColor:'transparent',tension:.25}
+      {label:'Inscritos',data:seriesSelected('kpi_general','TOTAL INSCRITOS'),borderColor:'#22C5DC',backgroundColor:'transparent',tension:.25},
+      {label:'Atendidos',data:seriesSelected('kpi_general','TOTAL ATENDIDOS'),borderColor:'#4CAF7D',backgroundColor:'transparent',tension:.25},
+      {label:'NSP',data:seriesSelected('kpi_general','TOTAL NSP'),borderColor:'#F5A623',backgroundColor:'transparent',tension:.25}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
   });
@@ -310,7 +388,7 @@ function renderResumen(){
   makeChart('performanceChart',{
     type:'bar',
     data:{labels:MONTHS,datasets:[{label:'Rendimiento %',data:MONTHS.map(m=>{
-      const i=getValue('kpi_general','TOTAL INSCRITOS',y,m), a=getValue('kpi_general','TOTAL ATENDIDOS',y,m);
+      const i=getSelectedYears().reduce((s,yy)=>s+getValue('kpi_general','TOTAL INSCRITOS',yy,m),0), a=getSelectedYears().reduce((s,yy)=>s+getValue('kpi_general','TOTAL ATENDIDOS',yy,m),0);
       return i ? (a/i)*100 : 0;
     })}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
@@ -318,7 +396,7 @@ function renderResumen(){
 
   makeChart('triageChart',{
     type:'doughnut',
-    data:{labels:['C1','C2','C3','C4','C5'],datasets:[{data:['C1','C2','C3','C4','C5'].map(k=>annualOrSum('triage',k,y))}]},
+    data:{labels:['C1','C2','C3','C4','C5'],datasets:[{data:['C1','C2','C3','C4','C5'].map(k=>annualSelected('triage',k))}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
   });
 
@@ -369,10 +447,9 @@ function renderHistorico(){
 }
 
 function renderTriage(){
-  const y = currentYear;
   ['C2','C3','C4','C5'].forEach(key=>{
-    const total = annualOrSum('triage',key,y);
-    const all = annualOrSum('triage','TOTAL TRIAGE',y);
+    const total = annualSelected('triage',key);
+    const all = annualSelected('triage','TOTAL TRIAGE');
     setText('t'+key.toLowerCase(), fmtInt(total));
     setText('t'+key.toLowerCase()+'p', all ? fmtPct((total/all)*100) + ' del total triage' : 'Sin base');
   });
@@ -380,32 +457,28 @@ function renderTriage(){
   makeChart('triageMonthlyChart',{
     type:'bar',
     data:{labels:MONTHS,datasets:[
-      {label:'C2',data:series('triage','C2',y)},
-      {label:'C3',data:series('triage','C3',y)},
-      {label:'C4',data:series('triage','C4',y)},
-      {label:'C5',data:series('triage','C5',y)}
+      {label:'C2',data:seriesSelected('triage','C2')},
+      {label:'C3',data:seriesSelected('triage','C3')},
+      {label:'C4',data:seriesSelected('triage','C4')},
+      {label:'C5',data:seriesSelected('triage','C5')}
     ]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{stacked:true,ticks:{color:'#6A8099'}},y:{stacked:true,ticks:{color:'#6A8099'}}}}
   });
 
-  const motivos = [
-    'RESPIRATORIO',
-    'Constatacion de lesiones',
-    'Alcoholemias',
-    'Mordedura de Perro',
-    'Accidentes en el Hogar'
-  ];
+  const motivos = getTopMotivos(5);
   makeChart('motivosChart',{
     type:'line',
-    data:{labels:MONTHS,datasets:motivos.map(m=>({label:m,data:series('motivo_consulta',m,y),tension:.25}))},
+    data:{labels:MONTHS,datasets:motivos.map(m=>({label:m,data:seriesSelected('motivo_consulta',m),tension:.25}))},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
   });
+
+  initMotivoSelector();
+  renderMotivoCompareTable();
 }
 
 function renderPoblacion(){
-  const y = currentYear;
-  const pedSeries = series('kpi_general','ATENDIDOS <15 AÑOS',y);
-  const aduSeries = series('kpi_general','ATENDIDOS ≥15 AÑOS',y);
+  const pedSeries = seriesSelected('kpi_general','ATENDIDOS <15 AÑOS');
+  const aduSeries = seriesSelected('kpi_general','ATENDIDOS ≥15 AÑOS');
 
   makeChart('pedAdultChart',{
     type:'bar',
@@ -418,22 +491,22 @@ function renderPoblacion(){
 
   makeChart('pedAdultDonut',{
     type:'doughnut',
-    data:{labels:['<15 años','≥15 años'],datasets:[{data:[annualOrSum('kpi_general','ATENDIDOS <15 AÑOS',y),annualOrSum('kpi_general','ATENDIDOS ≥15 AÑOS',y)]}]},
+    data:{labels:['<15 años','≥15 años'],datasets:[{data:[annualSelected('kpi_general','ATENDIDOS <15 AÑOS'),annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS')]}]},
     options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
   });
 }
 
 function renderCentros(){
-  const y = currentYear;
-  const items = [...new Set(DATA.records.filter(r => r.section==='centro_salud_atendido' && r.year===y && r.month==='ACUMULADO').map(r=>r.item))]
+  const years = getSelectedYears();
+  const items = [...new Set(DATA.records.filter(r => r.section==='centro_salud_atendido' && years.includes(r.year) && r.month==='ACUMULADO').map(r=>r.item))]
     .filter(i => i !== 'Todos los CESFAM');
   const rows = items.map(item => {
-    const vals = MONTHS.map(m => getValue('centro_salud_atendido',item,y,m));
-    const total = annualOrSum('centro_salud_atendido',item,y);
+    const vals = MONTHS.map(m => years.reduce((sum,y)=>sum+getValue('centro_salud_atendido',item,y,m),0));
+    const total = years.reduce((sum,y)=>sum+annualOrSum('centro_salud_atendido',item,y),0);
     return {item, vals, total};
   }).sort((a,b)=>b.total-a.total);
 
-  const grand = annualOrSum('centro_salud_atendido','Todos los CESFAM',y) || rows.reduce((a,r)=>a+r.total,0);
+  const grand = years.reduce((sum,y)=>sum+annualOrSum('centro_salud_atendido','Todos los CESFAM',y),0) || rows.reduce((a,r)=>a+r.total,0);
   const top8 = rows.slice(0,8);
 
   makeChart('centrosChart',{
@@ -496,6 +569,7 @@ fetch('sar.json')
     el('status').style.display = 'none';
     document.querySelectorAll('.panel').forEach((p,i)=>{ p.style.display = i===0 ? 'block':'none'; });
     renderYearButtons();
+    initMotivoSelector();
     renderAll();
     initTabs();
   })
