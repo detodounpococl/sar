@@ -3,580 +3,74 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard SAR 2019–2026</title>
+<title>Dashboard SAR 2019–2026 · ampliado</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#050E1A; --bg2:#091525; --card:#0D1E30; --card2:#112540;
-  --border:rgba(0,180,160,.12); --teal:#00B4A0; --teal2:#00D4BC; --cyan:#22C5DC;
-  --amber:#F5A623; --rose:#F05060; --violet:#7B83E8; --green:#4CAF7D;
-  --text:#D8E4F0; --muted:#6A8099; --font:'Syne',sans-serif; --mono:'IBM Plex Mono',monospace;
-}
+:root{--bg:#050E1A;--bg2:#091525;--card:#0D1E30;--card2:#112540;--border:rgba(0,180,160,.12);--teal:#00B4A0;--teal2:#00D4BC;--cyan:#22C5DC;--amber:#F5A623;--rose:#F05060;--violet:#7B83E8;--green:#4CAF7D;--text:#D8E4F0;--muted:#6A8099;--font:'Syne',sans-serif;--mono:'IBM Plex Mono',monospace}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
-.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);
-  padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
-.header-left{display:flex;align-items:center;gap:14px}
-.badge{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#000;font-weight:800;font-size:12px;
-  padding:5px 12px;border-radius:5px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono)}
-.header h1{font-size:18px}
-.header p{font-size:11px;color:var(--muted);margin-top:3px}
-.header-right{text-align:right;font-size:11px;color:var(--muted)}
-.header-right strong{display:block;color:var(--text);font-size:13px}
-.header-right a{color:var(--teal);text-decoration:none}
-.toolbar,.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.tabbar{padding-top:0}
-.label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
-.ybtn,.tabbtn,.ghostbtn{
-  padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);
-  font:600 11px var(--mono);cursor:pointer;transition:.15s
-}
-.ybtn:hover,.tabbtn:hover,.ghostbtn:hover{border-color:var(--cyan);color:var(--cyan)}
-.ybtn.active,.tabbtn.active{background:rgba(0,180,160,.14);border-color:var(--teal);color:var(--teal2)}
-.tabbtn{padding:8px 14px;text-transform:uppercase;letter-spacing:1px}
-.content{padding:22px 24px}
-.panel{display:none}
-.panel.active{display:block}
-.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2.4px;color:var(--teal);
-  margin:0 0 14px 0;display:flex;align-items:center;gap:10px;font-family:var(--mono)}
-.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
-.kpi-card,.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
-.kpi-card{position:relative;overflow:hidden}
-.kpi-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px}
-.kpi-card.teal::before{background:linear-gradient(90deg,var(--teal),var(--cyan))}
-.kpi-card.green::before{background:linear-gradient(90deg,var(--green),#2A7D50)}
-.kpi-card.amber::before{background:linear-gradient(90deg,var(--amber),#D4880A)}
-.kpi-card.rose::before{background:linear-gradient(90deg,var(--rose),#A0102A)}
-.kpi-card.violet::before{background:linear-gradient(90deg,var(--violet),#3945C0)}
-.kpi-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--muted);letter-spacing:1.4px;margin-bottom:10px}
-.kpi-value{font:700 30px var(--mono);line-height:1}
-.kpi-sub{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4}
-.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
-.grid-2-eq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
-.chart-title{font-size:13px;font-weight:700;margin-bottom:4px}
-.chart-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
-.chart-wrap{position:relative;height:290px}
-.chart-wrap.short{height:220px}
-.table-wrap{overflow:auto}
-.selector{padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font:600 12px var(--mono)}
-.heatmap-table th,.heatmap-table td{text-align:right}
-.heatmap-table th:first-child,.heatmap-table td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
-.heat{font-weight:700;border-radius:6px}
-table{width:100%;border-collapse:collapse}
-th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
-th{text-align:left;font:600 10px var(--mono);text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
-td{font-size:12px;color:var(--text)}
-td.num,th.num{text-align:right;font-family:var(--mono);font-size:11px}
-.note{font-size:11px;color:var(--muted)}
-.context-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;
-  font:700 11px var(--mono);background:rgba(0,180,160,.15);border:1px solid rgba(0,180,160,.3);color:var(--teal2)}
-.footer{text-align:center;padding:16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);font-family:var(--mono)}
-.loading,.error{padding:18px;border:1px solid var(--border);background:var(--card);border-radius:12px}
-.error{border-color:rgba(240,80,96,.28);color:#ff9aa5}
-@media(max-width:1200px){
-  .kpi-grid,.grid-3,.grid-2,.grid-2-eq{grid-template-columns:1fr}
-}
+.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50;gap:16px;flex-wrap:wrap}.header-left{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.badge{background:linear-gradient(135deg,var(--teal) 0%,var(--cyan) 100%);color:#03131C;padding:6px 10px;border-radius:999px;font:700 10px var(--mono);text-transform:uppercase;letter-spacing:1px}.title h1{font-size:20px;line-height:1.1}.title p{color:var(--muted);font-size:12px;margin-top:4px}.context-badge{padding:8px 12px;border:1px solid var(--border);border-radius:10px;background:rgba(255,255,255,.02);font:600 11px var(--mono);color:var(--teal2)}
+.toolbar,.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}.label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}.ybtn,.tabbtn,.ghostbtn,select{padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font:600 11px var(--mono);cursor:pointer;transition:.15s}select{background:var(--card);color:var(--text)}.ybtn:hover,.tabbtn:hover,.ghostbtn:hover{border-color:rgba(0,212,188,.5);color:var(--text)}.ybtn.active,.tabbtn.active{background:linear-gradient(135deg,rgba(0,180,160,.18),rgba(34,197,220,.12));color:var(--teal2);border-color:rgba(0,212,188,.45)}
+.content{padding:20px 24px 40px}.section{display:none}.section.active{display:block}.grid{display:grid;gap:16px}.grid.kpis{grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:18px}.grid.two{grid-template-columns:repeat(auto-fit,minmax(360px,1fr));}.card{background:linear-gradient(180deg,var(--card) 0%,#0B1A2C 100%);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:0 8px 28px rgba(0,0,0,.18)}.kpi .kpi-label{font:600 11px var(--mono);letter-spacing:1px;color:var(--muted);text-transform:uppercase}.kpi .kpi-value{font-size:32px;font-weight:800;line-height:1;margin:12px 0 6px}.kpi .kpi-sub{color:var(--muted);font-size:12px}.card h3{font-size:16px;margin-bottom:4px}.sub{color:var(--muted);font-size:12px;margin-bottom:12px}.table-wrap{overflow:auto;border-radius:14px;border:1px solid var(--border)}table{width:100%;border-collapse:collapse;background:rgba(255,255,255,.01)}th,td{padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{position:sticky;top:0;background:#0C2034;color:var(--teal2);font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.7px}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}tr:hover td{background:rgba(255,255,255,.015)}.heat{text-align:right;font-variant-numeric:tabular-nums;border-radius:6px}.controls{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}.helper{color:var(--muted);font-size:11px;line-height:1.4}.mini{font-size:11px;color:var(--muted)}.footer{padding:0 24px 28px;color:var(--muted);font-size:12px}.badge-soft{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(0,180,160,.12);border:1px solid var(--border);font:600 10px var(--mono);color:var(--teal2)}.note{padding:10px 12px;border-radius:12px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.18);color:#FFD08A;font-size:12px;line-height:1.45}
+@media(max-width:900px){.content{padding:16px}.toolbar,.tabbar,.header{padding-left:16px;padding-right:16px}}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="header-left">
-    <div class="badge">SAR</div>
-    <div>
-      <h1>Dashboard de Monitoreo · 2019–2026</h1>
-      <p>Servicio de Atención de Urgencia Rural · histórico actualizado con 2026</p>
-    </div>
-  </div>
-  <div class="header-right">
-    <strong>Rodrigo Villalobos R.</strong>
-    <a href="mailto:rodrigovillalobos1978@gmail.com">rodrigovillalobos1978@gmail.com</a>
-    <div id="clock"></div>
-  </div>
-</div>
-
-<div class="toolbar">
-  <span class="label">Año</span>
-  <div id="yearButtons"></div>
-  <span style="flex:1"></span>
-  <div class="context-badge" id="yearBadge">—</div>
-</div>
-
-<div class="tabbar">
-  <button class="tabbtn active" data-tab="resumen">Resumen</button>
-  <button class="tabbtn" data-tab="historico">Histórico</button>
-  <button class="tabbtn" data-tab="triage">Triage</button>
-  <button class="tabbtn" data-tab="poblacion">Población</button>
-  <button class="tabbtn" data-tab="centros">Centros</button>
-</div>
-
+<div class="header"><div class="header-left"><div class="badge">SAR · 2019–2026</div><div class="title"><h1>Dashboard operativo ampliado</h1><p>Incluye Horarios, Comparación y Proyección de otoño/invierno.</p></div></div><div class="context-badge" id="yearBadge">—</div></div>
+<div class="toolbar"><span class="label">Año</span><div id="yearButtons"></div><span style="flex:1"></span><div class="context-badge" id="clock">—</div></div>
+<div class="tabbar"><button class="tabbtn active" data-tab="resumen">Resumen</button><button class="tabbtn" data-tab="historico">Histórico</button><button class="tabbtn" data-tab="triage">Triage</button><button class="tabbtn" data-tab="poblacion">Población</button><button class="tabbtn" data-tab="centros">Centros</button><button class="tabbtn" data-tab="horarios">Horarios</button><button class="tabbtn" data-tab="comparacion">Comparación</button><button class="tabbtn" data-tab="proyeccion">Proyección</button></div>
 <div class="content">
-  <div id="status" class="loading">Cargando sar.json…</div>
-
-  <div class="panel active" id="panel-resumen" style="display:none">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div class="section-label" style="margin-bottom:0;flex:1">Indicadores Clave</div>
-      <div class="context-badge" id="periodBadge">—</div>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi-card teal"><div class="kpi-label">Total Inscritos</div><div class="kpi-value" id="kpiI">—</div><div class="kpi-sub" id="kpiISub">—</div></div>
-      <div class="kpi-card green"><div class="kpi-label">Total Atendidos</div><div class="kpi-value" id="kpiA">—</div><div class="kpi-sub" id="kpiASub">—</div></div>
-      <div class="kpi-card amber"><div class="kpi-label">Total NSP</div><div class="kpi-value" id="kpiN">—</div><div class="kpi-sub" id="kpiNSub">—</div></div>
-      <div class="kpi-card rose"><div class="kpi-label">Rendimiento</div><div class="kpi-value" id="kpiR">—</div><div class="kpi-sub" id="kpiRSub">—</div></div>
-    </div>
-
-    <div class="grid-2-eq">
-      <div class="card">
-        <div class="chart-title">Evolución mensual</div>
-        <div class="chart-sub">Inscritos vs atendidos vs NSP</div>
-        <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="chart-title">Rendimiento mensual</div>
-        <div class="chart-sub">% atendidos / inscritos</div>
-        <div class="chart-wrap"><canvas id="performanceChart"></canvas></div>
-      </div>
-    </div>
-
-    <div class="grid-3">
-      <div class="card">
-        <div class="chart-title">Triage acumulado</div>
-        <div class="chart-sub">C1 a C5</div>
-        <div class="chart-wrap short"><canvas id="triageChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="chart-title">NSP pediátrico vs adulto</div>
-        <div class="chart-sub">Acumulado anual</div>
-        <div class="chart-wrap short"><canvas id="nspSplitChart"></canvas></div>
-      </div>
-      <div class="card">
-        <div class="chart-title">Población atendida</div>
-        <div class="chart-sub">Pediátrico vs adulto</div>
-        <div class="chart-wrap short"><canvas id="populationChart"></canvas></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-historico">
-    <div class="section-label">Comparativo histórico 2019–2026</div>
-    <div class="grid-3">
-      <div class="card"><div class="chart-title">Atendidos por año</div><div class="chart-sub">Acumulado anual</div><div class="chart-wrap short"><canvas id="histAtendidosChart"></canvas></div></div>
-      <div class="card"><div class="chart-title">Rendimiento anual</div><div class="chart-sub">% atendidos / inscritos</div><div class="chart-wrap short"><canvas id="histRendChart"></canvas></div></div>
-      <div class="card"><div class="chart-title">NSP anual</div><div class="chart-sub">Acumulado anual</div><div class="chart-wrap short"><canvas id="histNspChart"></canvas></div></div>
-    </div>
-    <div class="card">
-      <div class="chart-title">Evolución mensual comparada</div>
-      <div class="chart-sub">Total atendidos por mes, todos los años</div>
-      <div class="chart-wrap"><canvas id="histMonthlyChart"></canvas></div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-triage">
-    <div class="section-label">Triage</div>
-    <div class="kpi-grid">
-      <div class="kpi-card violet"><div class="kpi-label">C2</div><div class="kpi-value" id="tc2">—</div><div class="kpi-sub" id="tc2p">—</div></div>
-      <div class="kpi-card amber"><div class="kpi-label">C3</div><div class="kpi-value" id="tc3">—</div><div class="kpi-sub" id="tc3p">—</div></div>
-      <div class="kpi-card teal"><div class="kpi-label">C4</div><div class="kpi-value" id="tc4">—</div><div class="kpi-sub" id="tc4p">—</div></div>
-      <div class="kpi-card rose"><div class="kpi-label">C5</div><div class="kpi-value" id="tc5">—</div><div class="kpi-sub" id="tc5p">—</div></div>
-    </div>
-    <div class="grid-2-eq">
-      <div class="card"><div class="chart-title">Distribución mensual de triage</div><div class="chart-sub">C2 a C5</div><div class="chart-wrap"><canvas id="triageMonthlyChart"></canvas></div></div>
-      <div class="card"><div class="chart-title">Motivos de consulta destacados</div><div class="chart-sub">Top 5 histórico, con foco anual o total acumulado (totales fijados desde origen anual)</div><div class="chart-wrap"><canvas id="motivosChart"></canvas></div></div>
-    </div>
-    <div class="card">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px">
-        <div>
-          <div class="chart-title">Comparador mensual por motivo</div>
-          <div class="chart-sub">Eje X: meses · Eje Y: años · permite revisar los 5 motivos con mayor volumen histórico</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <span class="label">Motivo</span>
-          <select id="motivoSelect" class="selector"></select>
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table class="heatmap-table">
-          <thead><tr>
-            <th>Año</th>
-            <th class="num">Ene</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Abr</th><th class="num">May</th><th class="num">Jun</th>
-            <th class="num">Jul</th><th class="num">Ago</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th>
-            <th class="num">Total</th>
-          </tr></thead>
-          <tbody id="motivoCompareBody"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-poblacion">
-    <div class="section-label">Población atendida</div>
-    <div class="grid-2-eq">
-      <div class="card"><div class="chart-title">Atendidos por grupo</div><div class="chart-sub">Pediátrico y adulto por mes</div><div class="chart-wrap"><canvas id="pedAdultChart"></canvas></div></div>
-      <div class="card"><div class="chart-title">Composición anual</div><div class="chart-sub">Participación pediátrico vs adulto</div><div class="chart-wrap"><canvas id="pedAdultDonut"></canvas></div></div>
-    </div>
-  </div>
-
-  <div class="panel" id="panel-centros">
-    <div class="section-label">Centros de salud de origen</div>
-    <div class="grid-2-eq">
-      <div class="card"><div class="chart-title">Top 8 centros</div><div class="chart-sub">Atendidos acumulados del año seleccionado</div><div class="chart-wrap"><canvas id="centrosChart"></canvas></div></div>
-      <div class="card">
-        <div class="chart-title">Observaciones del set</div>
-        <div class="chart-sub">Validaciones y notas</div>
-        <div id="notesBox" class="note"></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="chart-title">Tabla de centros</div>
-      <div class="chart-sub">Valores mensuales del año seleccionado</div>
-      <div class="table-wrap"><table><thead><tr>
-        <th>Centro</th>
-        <th class="num">Ene</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Abr</th><th class="num">May</th><th class="num">Jun</th>
-        <th class="num">Jul</th><th class="num">Ago</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th>
-        <th class="num">Total</th><th class="num">%</th>
-      </tr></thead><tbody id="centrosBody"></tbody></table></div>
-    </div>
-  </div>
+<section class="section active" id="section-resumen"><div class="grid kpis"><div class="card kpi"><div class="kpi-label">Total atendidos</div><div class="kpi-value" id="kpiA">—</div><div class="kpi-sub" id="kpiASub"></div></div><div class="card kpi"><div class="kpi-label">Total inscritos</div><div class="kpi-value" id="kpiI">—</div><div class="kpi-sub" id="kpiISub"></div></div><div class="card kpi"><div class="kpi-label">Total NSP</div><div class="kpi-value" id="kpiN">—</div><div class="kpi-sub" id="kpiNSub"></div></div><div class="card kpi"><div class="kpi-label">Cobertura atendidos / inscritos</div><div class="kpi-value" id="kpiC">—</div><div class="kpi-sub" id="kpiCSub"></div></div></div><div class="grid two"><div class="card"><h3>Atendidos por mes</h3><div class="sub">Permite identificar estacionalidad y presión asistencial.</div><canvas id="chartResumenAtendidos" height="130"></canvas></div><div class="card"><h3>Triage anual</h3><div class="sub">Composición C1–C5 para el año seleccionado o el acumulado total.</div><canvas id="chartResumenTriage" height="130"></canvas></div><div class="card"><h3>Motivos de consulta destacados</h3><div class="sub">Top 5 según el período seleccionado.</div><canvas id="chartResumenMotivos" height="130"></canvas></div><div class="card"><h3>Señales operativas</h3><div class="sub">Lectura rápida para dirección.</div><div id="resumenNotas" class="helper"></div></div></div></section>
+<section class="section" id="section-historico"><div class="grid two"><div class="card"><h3>Total atendidos por año</h3><div class="sub">Serie anual oficial tomada del JSON corregido.</div><canvas id="chartHistoricoAtendidos" height="130"></canvas></div><div class="card"><h3>Tendencia de NSP por año</h3><div class="sub">Útil para revisar fricción operativa y ausentismo.</div><canvas id="chartHistoricoNsp" height="130"></canvas></div></div></section>
+<section class="section" id="section-triage"><div class="grid two"><div class="card"><h3>Triage mensual</h3><div class="sub">C2–C5 por mes para el período seleccionado.</div><canvas id="chartTriageMonthly" height="130"></canvas></div><div class="card"><div class="controls"><div><h3>Comparador mensual por motivo</h3><div class="sub">Eje X meses · Eje Y años · enfocado en los 5 motivos históricos con más volumen.</div></div><span style="flex:1"></span><label class="label">Motivo</label><select id="motivoSelect"></select></div><div class="table-wrap"><table><thead><tr><th>Año</th><th class="num">ENE</th><th class="num">FEB</th><th class="num">MAR</th><th class="num">ABR</th><th class="num">MAY</th><th class="num">JUN</th><th class="num">JUL</th><th class="num">AGO</th><th class="num">SEP</th><th class="num">OCT</th><th class="num">NOV</th><th class="num">DIC</th><th class="num">Total</th></tr></thead><tbody id="motivoCompareBody"></tbody></table></div></div></div></section>
+<section class="section" id="section-poblacion"><div class="grid two"><div class="card"><h3>Pediátrico vs adulto</h3><div class="sub">Distribución anual de pacientes atendidos.</div><canvas id="chartPoblacionMix" height="130"></canvas></div><div class="card"><h3>NSP pediátrico vs adulto</h3><div class="sub">Brecha de no presentación por segmento.</div><canvas id="chartPoblacionNspMix" height="130"></canvas></div></div></section>
+<section class="section" id="section-centros"><div class="grid two"><div class="card"><h3>Centro de salud atendido</h3><div class="sub">Top centros para el período seleccionado.</div><canvas id="chartCentrosAtendidos" height="130"></canvas></div><div class="card"><h3>Centro de salud inscrito</h3><div class="sub">Top centros de procedencia inscrita.</div><canvas id="chartCentrosInscritos" height="130"></canvas></div></div></section>
+<section class="section" id="section-horarios"><div class="note" style="margin-bottom:14px">La pestaña <strong>Horarios</strong> usa las franjas horarias mensuales del Excel. El archivo fuente no trae demanda por día individual de atención, por lo que aquí se identifica con precisión la <strong>hora</strong> de mayor presión y se incorpora una <strong>lectura calendario</strong> de fines de semana y feriados para apoyar la programación operativa.</div><div class="controls"><label class="label">Métrica horaria</label><select id="horarioMetric"><option value="TOTAL ATENDIDOS">Total atendidos</option><option value="TOTAL INSCRITOS">Total inscritos</option><option value="TOTAL NSP">Total NSP</option></select></div><div class="grid kpis"><div class="card kpi"><div class="kpi-label">Hora punta histórica</div><div class="kpi-value" id="horaPuntaGlobal">—</div><div class="kpi-sub" id="horaPuntaGlobalSub"></div></div><div class="card kpi"><div class="kpi-label">Hora punta período seleccionado</div><div class="kpi-value" id="horaPuntaYear">—</div><div class="kpi-sub" id="horaPuntaYearSub"></div></div><div class="card kpi"><div class="kpi-label">Mes más exigente</div><div class="kpi-value" id="mesPunta">—</div><div class="kpi-sub" id="mesPuntaSub"></div></div><div class="card kpi"><div class="kpi-label">Bloque crítico otoño/invierno</div><div class="kpi-value" id="horaOI">—</div><div class="kpi-sub" id="horaOISub"></div></div></div><div class="grid two"><div class="card"><h3>Perfil horario agregado</h3><div class="sub">Suma histórica o del año seleccionado según filtro.</div><canvas id="chartHorarioPerfil" height="130"></canvas></div><div class="card"><h3>Perfil horario otoño/invierno</h3><div class="sub">Meses abril a agosto. Ideal para reforzar turnos.</div><canvas id="chartHorarioOI" height="130"></canvas></div><div class="card"><h3>Heatmap mes × hora</h3><div class="sub">Para el período seleccionado. Intensidad mayor = mayor volumen.</div><div class="table-wrap"><table><thead><tr><th>Hora</th><th class="num">ENE</th><th class="num">FEB</th><th class="num">MAR</th><th class="num">ABR</th><th class="num">MAY</th><th class="num">JUN</th><th class="num">JUL</th><th class="num">AGO</th><th class="num">SEP</th><th class="num">OCT</th><th class="num">NOV</th><th class="num">DIC</th><th class="num">Total</th></tr></thead><tbody id="horarioHeatBody"></tbody></table></div></div><div class="card"><h3>Feriados y fines de semana</h3><div class="sub">Calendario operativo en Chile con feriado local del 20 de agosto para Chillán / Chillán Viejo.</div><div class="table-wrap"><table><thead><tr><th>Mes</th><th class="num">Días</th><th class="num">Fds</th><th class="num">Feriados</th><th class="num">No hábiles</th><th class="num">Hábiles</th><th>Detalle</th></tr></thead><tbody id="calendarBody"></tbody></table></div></div></div></section>
+<section class="section" id="section-comparacion"><div class="controls"><label class="label">Métrica</label><select id="cmpMetric"><option value="TOTAL ATENDIDOS">Total atendidos</option><option value="TOTAL INSCRITOS">Total inscritos</option><option value="TOTAL NSP">Total NSP</option></select><label class="label">Meses (máx. 4)</label><select id="cmpMonths" multiple size="4"></select><label class="label">Años (máx. 3)</label><select id="cmpYears" multiple size="3"></select><button class="ghostbtn" id="cmpApply">Aplicar</button></div><div class="helper" style="margin-bottom:12px">Selecciona hasta 4 meses y hasta 3 años para compararlos entre sí.</div><div class="grid two"><div class="card"><h3>Comparación directa</h3><div class="sub">Comparación entre meses y años seleccionados.</div><canvas id="chartComparacion" height="130"></canvas></div><div class="card"><h3>Resultado tabular</h3><div class="sub">Con total por año para facilitar lectura directiva.</div><div class="table-wrap"><table><thead><tr id="cmpHead"></tr></thead><tbody id="cmpBody"></tbody></table></div></div></div></section>
+<section class="section" id="section-proyeccion"><div class="note" style="margin-bottom:14px">La proyección estima la demanda de <strong>abril a agosto de 2026</strong> usando la historia disponible por mes, con mayor peso a los años recientes y un ajuste por comportamiento de 2026 en el primer trimestre. Se muestran tres escenarios: <strong>Alta demanda</strong>, <strong>Base esperada</strong> y <strong>Contención favorable</strong>.</div><div class="grid kpis"><div class="card kpi"><div class="kpi-label">Abr–Ago · alta demanda</div><div class="kpi-value" id="projHighTotal">—</div><div class="kpi-sub">Escenario más exigente</div></div><div class="card kpi"><div class="kpi-label">Abr–Ago · base</div><div class="kpi-value" id="projBaseTotal">—</div><div class="kpi-sub">Escenario más probable</div></div><div class="card kpi"><div class="kpi-label">Abr–Ago · favorable</div><div class="kpi-value" id="projLowTotal">—</div><div class="kpi-sub">Escenario de menor presión</div></div></div><div class="grid two"><div class="card"><h3>Escenarios otoño / invierno</h3><div class="sub">Demanda mensual proyectada de usuarios atendidos.</div><canvas id="chartProyeccion" height="130"></canvas></div><div class="card"><h3>Detalle de proyección</h3><div class="sub">Apoyo para decisión de refuerzo de turnos y dotación.</div><div class="table-wrap"><table><thead><tr><th>Mes</th><th class="num">Histórico prom.</th><th class="num">Alta demanda</th><th class="num">Base</th><th class="num">Favorable</th><th>Lectura</th></tr></thead><tbody id="projBody"></tbody></table></div></div></div></section>
 </div>
-
-<div class="footer">v3 Totales origen anual · Autor: Rodrigo Villalobos R. · rodrigovillalobos1978@gmail.com · <span id="footerDate"></span></div>
-
+<div class="footer" id="footerDate"></div>
 <script>
-let DATA = null;
-let currentYear = 2026;
-let selectedMotivo = null;
-const charts = {};
-
-const MONTHS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-
-function fmtInt(v){ return Number(v||0).toLocaleString('es-CL'); }
-function fmtPct(v){ return isFinite(v) ? `${v.toFixed(1)}%` : '—'; }
-function el(id){ return document.getElementById(id); }
-
-function clockTick(){
-  const now = new Date();
-  el('clock').textContent = now.toLocaleString('es-CL');
-  el('footerDate').textContent = 'Actualizado visualmente: ' + now.toLocaleDateString('es-CL');
-}
-setInterval(clockTick, 1000); clockTick();
-
+let DATA=null; let currentYear=2026; let selectedMotivo=null; const charts={};
+const MONTHS=["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
+const HOURS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00'];
+const fmtInt=v=>Number(v||0).toLocaleString('es-CL');
+const fmtPct=v=>isFinite(v)?`${v.toFixed(1)}%`:'—';
+const el=id=>document.getElementById(id); const uniq=a=>[...new Set(a)];
+function clockTick(){const now=new Date();el('clock').textContent=now.toLocaleString('es-CL');el('footerDate').textContent='Actualizado visualmente: '+now.toLocaleDateString('es-CL');} setInterval(clockTick,1000); clockTick();
 function destroyChart(id){ if(charts[id]) charts[id].destroy(); }
-function makeChart(id, config){ destroyChart(id); charts[id] = new Chart(el(id), config); }
-
-function getValue(section, item, year, month){
-  const row = DATA.records.find(r => r.section===section && r.item===item && r.year===year && r.month===month);
-  return row ? Number(row.value||0) : 0;
-}
-function series(section, item, year){
-  return MONTHS.map(m => getValue(section,item,year,m));
-}
-function annual(section,item,year){
-  return getValue(section,item,year,'ACUMULADO');
-}
-function annualOrSum(section,item,year){
-  const acc = annual(section,item,year);
-  return acc || series(section,item,year).reduce((a,b)=>a+b,0);
-}
-
-function getSelectedYears(){
-  return currentYear === 'TODOS' ? DATA.metadata.years : [currentYear];
-}
-function getYearLabel(){
-  return currentYear === 'TODOS' ? `Todos (${DATA.metadata.years[0]}–${DATA.metadata.years[DATA.metadata.years.length-1]})` : String(currentYear);
-}
-function seriesSelected(section, item){
-  return MONTHS.map(m => getSelectedYears().reduce((sum,y)=>sum+getValue(section,item,y,m),0));
-}
-function annualSelected(section,item){
-  return getSelectedYears().reduce((sum,y)=>sum+annualOrSum(section,item,y),0);
-}
-function yoyText(section,item,year){
-  if(year === 'TODOS') return `Acumulado ${DATA.metadata.years[0]}–${DATA.metadata.years[DATA.metadata.years.length-1]}`;
-  const years = DATA.metadata.years;
-  const idx = years.indexOf(year);
-  if(idx<=0) return 'Sin comparación previa';
-  const prev = annualOrSum(section,item,years[idx-1]);
-  const cur = annualOrSum(section,item,year);
-  if(!prev) return 'Sin base previa';
-  const pct = ((cur-prev)/prev)*100;
-  return `${pct>=0?'+':''}${pct.toFixed(1)}% vs ${years[idx-1]}`;
-}
-function renderYearButtons(){
-  const wrap = el('yearButtons');
-  wrap.innerHTML = '';
-  const allYears = ['TODOS', ...DATA.metadata.years];
-  allYears.forEach(y => {
-    const b = document.createElement('button');
-    b.className = 'ybtn' + (y===currentYear ? ' active':'');
-    b.textContent = y;
-    b.onclick = () => { currentYear = y; renderAll(); renderYearButtons(); };
-    wrap.appendChild(b);
-  });
-}
-function setText(id, value){ el(id).textContent = value; }
-
-function getTopMotivos(limit=5){
-  const totals = {};
-  DATA.records
-    .filter(r => r.section==='motivo_consulta' && r.month==='ACUMULADO')
-    .forEach(r => { totals[r.item] = (totals[r.item]||0) + Number(r.value||0); });
-  return Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([item])=>item);
-}
-function initMotivoSelector(){
-  const top = getTopMotivos(5);
-  if(!selectedMotivo || !top.includes(selectedMotivo)) selectedMotivo = top[0] || null;
-  const sel = el('motivoSelect');
-  if(!sel) return;
-  sel.innerHTML = top.map(item => `<option value="${item.replace(/"/g,'&quot;')}">${item}</option>`).join('');
-  sel.value = selectedMotivo;
-  sel.onchange = () => { selectedMotivo = sel.value; renderTriage(); };
-}
-function renderMotivoCompareTable(){
-  if(!selectedMotivo) return;
-  const years = DATA.metadata.years;
-  const rows = years.map(y => {
-    const vals = series('motivo_consulta', selectedMotivo, y);
-    return {year:y, vals, total: annualOrSum('motivo_consulta', selectedMotivo, y)};
-  });
-  const maxVal = Math.max(1, ...rows.flatMap(r=>r.vals));
-  el('motivoCompareBody').innerHTML = rows.map(r => `
-    <tr>
-      <td><strong>${r.year}</strong></td>
-      ${r.vals.map(v=>{
-        const alpha = Math.max(0.08, v / maxVal);
-        return `<td class="num heat" style="background:rgba(0,180,160,${alpha.toFixed(3)});">${fmtInt(v)}</td>`;
-      }).join('')}
-      <td class="num"><strong>${fmtInt(r.total)}</strong></td>
-    </tr>
-  `).join('');
-}
-function renderResumen(){
-  const y = currentYear;
-  const ins = annualSelected('kpi_general','TOTAL INSCRITOS');
-  const ate = annualSelected('kpi_general','TOTAL ATENDIDOS');
-  const nsp = annualSelected('kpi_general','TOTAL NSP');
-  const ped = annualSelected('kpi_general','ATENDIDOS <15 AÑOS');
-  const adu = annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS');
-  const nspPed = annualSelected('kpi_general','NSP PEDIÁTRICOS');
-  const nspAdu = annualSelected('kpi_general','NSP ADULTOS');
-  const performance = ins ? (ate/ins)*100 : 0;
-
-  setText('kpiI', fmtInt(ins));
-  setText('kpiA', fmtInt(ate));
-  setText('kpiN', fmtInt(nsp));
-  setText('kpiR', fmtPct(performance));
-  setText('kpiISub', yoyText('kpi_general','TOTAL INSCRITOS',y));
-  setText('kpiASub', yoyText('kpi_general','TOTAL ATENDIDOS',y));
-  setText('kpiNSub', yoyText('kpi_general','TOTAL NSP',y));
-  setText('kpiRSub', ins ? `${fmtInt(ins-nsp)} registrados efectivos sobre inscritos` : 'Sin base');
-  setText('periodBadge', `Período seleccionado: ${getYearLabel()}`);
-  setText('yearBadge', `${getYearLabel()} activo`);
-
-  makeChart('monthlyChart',{
-    type:'line',
-    data:{labels:MONTHS,datasets:[
-      {label:'Inscritos',data:seriesSelected('kpi_general','TOTAL INSCRITOS'),borderColor:'#22C5DC',backgroundColor:'transparent',tension:.25},
-      {label:'Atendidos',data:seriesSelected('kpi_general','TOTAL ATENDIDOS'),borderColor:'#4CAF7D',backgroundColor:'transparent',tension:.25},
-      {label:'NSP',data:seriesSelected('kpi_general','TOTAL NSP'),borderColor:'#F5A623',backgroundColor:'transparent',tension:.25}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  makeChart('performanceChart',{
-    type:'bar',
-    data:{labels:MONTHS,datasets:[{label:'Rendimiento %',data:MONTHS.map(m=>{
-      const i=getSelectedYears().reduce((s,yy)=>s+getValue('kpi_general','TOTAL INSCRITOS',yy,m),0), a=getSelectedYears().reduce((s,yy)=>s+getValue('kpi_general','TOTAL ATENDIDOS',yy,m),0);
-      return i ? (a/i)*100 : 0;
-    })}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  makeChart('triageChart',{
-    type:'doughnut',
-    data:{labels:['C1','C2','C3','C4','C5'],datasets:[{data:['C1','C2','C3','C4','C5'].map(k=>annualSelected('triage',k))}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
-  });
-
-  makeChart('nspSplitChart',{
-    type:'bar',
-    data:{labels:['Pediátrico','Adulto'],datasets:[{label:'NSP',data:[nspPed,nspAdu]}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  makeChart('populationChart',{
-    type:'pie',
-    data:{labels:['<15 años','≥15 años'],datasets:[{data:[ped,adu]}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
-  });
-}
-
-function renderHistorico(){
-  const years = DATA.metadata.years;
-  const attended = years.map(y => annualOrSum('kpi_general','TOTAL ATENDIDOS',y));
-  const inscritos = years.map(y => annualOrSum('kpi_general','TOTAL INSCRITOS',y));
-  const nsp = years.map(y => annualOrSum('kpi_general','TOTAL NSP',y));
-  const rend = years.map((y,i) => inscritos[i] ? (attended[i]/inscritos[i])*100 : 0);
-
-  makeChart('histAtendidosChart',{
-    type:'bar',
-    data:{labels:years,datasets:[{label:'Atendidos',data:attended}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-  makeChart('histRendChart',{
-    type:'line',
-    data:{labels:years,datasets:[{label:'Rendimiento %',data:rend,borderColor:'#00D4BC',backgroundColor:'transparent',tension:.25}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-  makeChart('histNspChart',{
-    type:'bar',
-    data:{labels:years,datasets:[{label:'NSP',data:nsp}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-  makeChart('histMonthlyChart',{
-    type:'line',
-    data:{labels:MONTHS,datasets:years.map(y=>({
-      label:String(y),
-      data:series('kpi_general','TOTAL ATENDIDOS',y),
-      tension:.22
-    }))},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-}
-
-function renderTriage(){
-  ['C2','C3','C4','C5'].forEach(key=>{
-    const total = annualSelected('triage',key);
-    const all = annualSelected('triage','TOTAL TRIAGE');
-    setText('t'+key.toLowerCase(), fmtInt(total));
-    setText('t'+key.toLowerCase()+'p', all ? fmtPct((total/all)*100) + ' del total triage' : 'Sin base');
-  });
-
-  makeChart('triageMonthlyChart',{
-    type:'bar',
-    data:{labels:MONTHS,datasets:[
-      {label:'C2',data:seriesSelected('triage','C2')},
-      {label:'C3',data:seriesSelected('triage','C3')},
-      {label:'C4',data:seriesSelected('triage','C4')},
-      {label:'C5',data:seriesSelected('triage','C5')}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{stacked:true,ticks:{color:'#6A8099'}},y:{stacked:true,ticks:{color:'#6A8099'}}}}
-  });
-
-  const motivos = getTopMotivos(5);
-  makeChart('motivosChart',{
-    type:'line',
-    data:{labels:MONTHS,datasets:motivos.map(m=>({label:m,data:seriesSelected('motivo_consulta',m),tension:.25}))},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  initMotivoSelector();
-  renderMotivoCompareTable();
-}
-
-function renderPoblacion(){
-  const pedSeries = seriesSelected('kpi_general','ATENDIDOS <15 AÑOS');
-  const aduSeries = seriesSelected('kpi_general','ATENDIDOS ≥15 AÑOS');
-
-  makeChart('pedAdultChart',{
-    type:'bar',
-    data:{labels:MONTHS,datasets:[
-      {label:'<15 años',data:pedSeries},
-      {label:'≥15 años',data:aduSeries}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  makeChart('pedAdultDonut',{
-    type:'doughnut',
-    data:{labels:['<15 años','≥15 años'],datasets:[{data:[annualSelected('kpi_general','ATENDIDOS <15 AÑOS'),annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS')]}]},
-    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
-  });
-}
-
-function renderCentros(){
-  const years = getSelectedYears();
-  const items = [...new Set(DATA.records.filter(r => r.section==='centro_salud_atendido' && years.includes(r.year) && r.month==='ACUMULADO').map(r=>r.item))]
-    .filter(i => i !== 'Todos los CESFAM');
-  const rows = items.map(item => {
-    const vals = MONTHS.map(m => years.reduce((sum,y)=>sum+getValue('centro_salud_atendido',item,y,m),0));
-    const total = years.reduce((sum,y)=>sum+annualOrSum('centro_salud_atendido',item,y),0);
-    return {item, vals, total};
-  }).sort((a,b)=>b.total-a.total);
-
-  const grand = years.reduce((sum,y)=>sum+annualOrSum('centro_salud_atendido','Todos los CESFAM',y),0) || rows.reduce((a,r)=>a+r.total,0);
-  const top8 = rows.slice(0,8);
-
-  makeChart('centrosChart',{
-    type:'bar',
-    data:{labels:top8.map(r=>r.item),datasets:[{label:'Atendidos',data:top8.map(r=>r.total)}]},
-    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
-  });
-
-  el('centrosBody').innerHTML = rows.map(r => `
-    <tr>
-      <td>${r.item}</td>
-      ${r.vals.map(v=>`<td class="num">${fmtInt(v)}</td>`).join('')}
-      <td class="num">${fmtInt(r.total)}</td>
-      <td class="num">${fmtPct(grand ? (r.total/grand)*100 : 0)}</td>
-    </tr>
-  `).join('');
-
-  el('notesBox').innerHTML = `
-    <div style="display:grid;gap:10px">
-      <div>• Total año seleccionado: <strong>${fmtInt(grand)}</strong>.</div>
-      <div>• Años disponibles: <strong>${DATA.metadata.years.join(', ')}</strong>.</div>
-      <div>• Fuente: <strong>${DATA.metadata.source_file}</strong>.</div>
-      <div>• Anomalías informadas en JSON: <strong>${DATA.anomalies.length}</strong>.</div>
-      ${DATA.metadata.notes.map(n=>`<div>• ${n}</div>`).join('')}
-    </div>
-  `;
-}
-
-function renderAll(){
-  renderResumen();
-  renderHistorico();
-  renderTriage();
-  renderPoblacion();
-  renderCentros();
-}
-
-function initTabs(){
-  document.querySelectorAll('.tabbtn').forEach(btn=>{
-    btn.addEventListener('click',()=>{
-      document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const tab = btn.dataset.tab;
-      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
-      const panel = el('panel-'+tab);
-      panel.classList.add('active');
-      panel.style.display='block';
-    });
-  });
-}
-
-fetch('sar_actualizado_totales_origen.json')
-  .then(r => {
-    if(!r.ok) throw new Error('No se pudo abrir sar.json');
-    return r.json();
-  })
-  .then(json => {
-    DATA = json;
-    if(DATA?.metadata?.years?.includes(2026)) currentYear = 2026;
-    el('status').style.display = 'none';
-    document.querySelectorAll('.panel').forEach((p,i)=>{ p.style.display = i===0 ? 'block':'none'; });
-    renderYearButtons();
-    initMotivoSelector();
-    renderAll();
-    initTabs();
-  })
-  .catch(err => {
-    el('status').className = 'error';
-    el('status').textContent = 'Error cargando sar.json: ' + err.message + '. Deja este HTML en la misma carpeta que sar.json.';
-  });
+function makeChart(id, config){ destroyChart(id); charts[id]=new Chart(el(id), config); }
+function setText(id, value){ el(id).textContent=value; }
+function getSelectedYears(){ return currentYear==='TODOS' ? DATA.metadata.years : [currentYear]; }
+function getYearLabel(){ return currentYear==='TODOS' ? `Todos (${DATA.metadata.years[0]}–${DATA.metadata.years[DATA.metadata.years.length-1]})` : String(currentYear); }
+function getValue(section,item,year,month){ const row=DATA.records.find(r=>r.section===section && r.item===item && r.year===year && r.month===month); return row?Number(row.value||0):0; }
+function series(section,item,year){ return MONTHS.map(m=>getValue(section,item,year,m)); }
+function annual(section,item,year){ return getValue(section,item,year,'ACUMULADO'); }
+function annualOrSum(section,item,year){ const v=annual(section,item,year); return v || series(section,item,year).reduce((a,b)=>a+b,0); }
+function seriesSelected(section,item){ return MONTHS.map(m=>getSelectedYears().reduce((sum,y)=>sum+getValue(section,item,y,m),0)); }
+function annualSelected(section,item){ return getSelectedYears().reduce((sum,y)=>sum+annualOrSum(section,item,y),0); }
+function renderYearButtons(){ const wrap=el('yearButtons'); wrap.innerHTML=''; ['TODOS',...DATA.metadata.years].forEach(y=>{ const b=document.createElement('button'); b.className='ybtn'+(y===currentYear?' active':''); b.textContent=y; b.onclick=()=>{ currentYear=y; renderYearButtons(); renderAll(); }; wrap.appendChild(b); }); }
+function baseOptions(horizontal=false){ return {responsive:true,maintainAspectRatio:false,indexAxis:horizontal?'y':'x',plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}; }
+function getTopMotivos(limit=5){ const totals={}; DATA.records.filter(r=>r.section==='motivo_consulta' && r.month==='ACUMULADO').forEach(r=>{ totals[r.item]=(totals[r.item]||0)+Number(r.value||0); }); return Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,limit).map(([k])=>k); }
+function initMotivoSelector(){ const top=getTopMotivos(5); if(!selectedMotivo || !top.includes(selectedMotivo)) selectedMotivo=top[0]||null; const sel=el('motivoSelect'); sel.innerHTML=top.map(m=>`<option value="${m}">${m}</option>`).join(''); sel.value=selectedMotivo; sel.onchange=()=>{ selectedMotivo=sel.value; renderTriage(); }; }
+function renderResumen(){ const ins=annualSelected('kpi_general','TOTAL INSCRITOS'); const ate=annualSelected('kpi_general','TOTAL ATENDIDOS'); const nsp=annualSelected('kpi_general','TOTAL NSP'); const ped=annualSelected('kpi_general','ATENDIDOS <15 AÑOS'); const adu=annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS'); setText('kpiI',fmtInt(ins)); setText('kpiA',fmtInt(ate)); setText('kpiN',fmtInt(nsp)); setText('kpiC',fmtPct(ins?ate/ins*100:0)); setText('kpiISub',getYearLabel()); setText('kpiASub', ped+adu?`Pediátrico ${fmtPct(ped/(ped+adu)*100)} · Adulto ${fmtPct(adu/(ped+adu)*100)}`:'—'); setText('kpiNSub',ate?`NSP / atendidos: ${fmtPct(nsp/ate*100)}`:'—'); setText('kpiCSub','Alineado al período seleccionado'); makeChart('chartResumenAtendidos',{type:'bar',data:{labels:MONTHS,datasets:[{label:'Atendidos',data:seriesSelected('kpi_general','TOTAL ATENDIDOS')}]},options:baseOptions()}); const triageItems=['C1','C2','C3','C4','C5']; makeChart('chartResumenTriage',{type:'doughnut',data:{labels:triageItems,datasets:[{data:triageItems.map(i=>annualSelected('triage',i))}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}}); const motivos=getTopMotivos(5); makeChart('chartResumenMotivos',{type:'bar',data:{labels:motivos,datasets:[{label:'Casos',data:motivos.map(m=>annualSelected('motivo_consulta',m))}]},options:baseOptions(true)}); const peakMonth=MONTHS.map(m=>[m,getSelectedYears().reduce((s,y)=>s+getValue('kpi_general','TOTAL ATENDIDOS',y,m),0)]).sort((a,b)=>b[1]-a[1])[0]; const coverage=ins?ate/ins*100:0; el('resumenNotas').innerHTML=`<div class="helper">• Mes más exigente: <strong>${peakMonth?peakMonth[0]:'—'}</strong> con <strong>${peakMonth?fmtInt(peakMonth[1]):'0'}</strong> atenciones.</div><br><div class="helper">• Mezcla etaria: <strong>${fmtInt(ped)}</strong> pediátricos y <strong>${fmtInt(adu)}</strong> adultos.</div><br><div class="helper">• Cobertura sobre inscritos: <strong>${fmtPct(coverage)}</strong>.</div><br><div class="helper">• Para planificación invernal, revisar <strong>Horarios</strong> y <strong>Proyección</strong>.</div>`; }
+function renderHistorico(){ const years=DATA.metadata.years; makeChart('chartHistoricoAtendidos',{type:'line',data:{labels:years,datasets:[{label:'Total atendidos',data:years.map(y=>annualOrSum('kpi_general','TOTAL ATENDIDOS',y)),tension:.25}]},options:baseOptions()}); makeChart('chartHistoricoNsp',{type:'line',data:{labels:years,datasets:[{label:'Total NSP',data:years.map(y=>annualOrSum('kpi_general','TOTAL NSP',y)),tension:.25}]},options:baseOptions()}); }
+function renderMotivoCompareTable(){ if(!selectedMotivo) return; const rows=DATA.metadata.years.map(y=>{ const vals=series('motivo_consulta',selectedMotivo,y); return {year:y,vals,total:annualOrSum('motivo_consulta',selectedMotivo,y)}; }); const maxVal=Math.max(1,...rows.flatMap(r=>r.vals)); el('motivoCompareBody').innerHTML=rows.map(r=>`<tr><td><strong>${r.year}</strong></td>${r.vals.map(v=>`<td class="num heat" style="background:rgba(0,180,160,${Math.max(0.07,v/maxVal).toFixed(3)})">${fmtInt(v)}</td>`).join('')}<td class="num"><strong>${fmtInt(r.total)}</strong></td></tr>`).join(''); }
+function renderTriage(){ makeChart('chartTriageMonthly',{type:'bar',data:{labels:MONTHS,datasets:['C2','C3','C4','C5'].map(i=>({label:i,data:seriesSelected('triage',i)}))},options:baseOptions()}); renderMotivoCompareTable(); }
+function renderPoblacion(){ makeChart('chartPoblacionMix',{type:'doughnut',data:{labels:['<15 años','≥15 años'],datasets:[{data:[annualSelected('kpi_general','ATENDIDOS <15 AÑOS'),annualSelected('kpi_general','ATENDIDOS ≥15 AÑOS')]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}}); makeChart('chartPoblacionNspMix',{type:'doughnut',data:{labels:['NSP pediátrico','NSP adulto'],datasets:[{data:[annualSelected('kpi_general','NSP PEDIÁTRICOS'),annualSelected('kpi_general','NSP ADULTOS')]}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}}); }
+function sectionTotals(section){ const items=uniq(DATA.records.filter(r=>r.section===section && r.month==='ACUMULADO').map(r=>r.item)); return items.map(item=>[item,getSelectedYears().reduce((s,y)=>s+annualOrSum(section,item,y),0)]).sort((a,b)=>b[1]-a[1]).slice(0,8); }
+function renderCentros(){ const at=sectionTotals('centro_salud_atendido'); const ins=sectionTotals('centro_salud_inscrito'); makeChart('chartCentrosAtendidos',{type:'bar',data:{labels:at.map(x=>x[0]),datasets:[{label:'Atenciones',data:at.map(x=>x[1])}]},options:baseOptions(true)}); makeChart('chartCentrosInscritos',{type:'bar',data:{labels:ins.map(x=>x[0]),datasets:[{label:'Inscritos',data:ins.map(x=>x[1])}]},options:baseOptions(true)}); }
+function hourlyFiltered(metric, months=null, years=null){ const ys=years||getSelectedYears(); const ms=months||MONTHS; return DATA.hourly_records.filter(r=>r.metric===metric && ys.includes(r.year) && ms.includes(r.month)); }
+function aggregateHourly(metric, months=null, years=null){ const map={}; HOURS.forEach(h=>map[h]=0); hourlyFiltered(metric,months,years).forEach(r=>{ map[r.hour]=(map[r.hour]||0)+Number(r.value||0); }); return HOURS.map(h=>({hour:h,value:map[h]||0})); }
+function renderHorarios(){ const metric=el('horarioMetric').value; const globalAgg=aggregateHourly(metric,MONTHS,DATA.metadata.years); const yearAgg=aggregateHourly(metric); const oiAgg=aggregateHourly(metric,['ABRIL','MAYO','JUNIO','JULIO','AGOSTO']); const peakGlobal=[...globalAgg].sort((a,b)=>b.value-a.value)[0]||{hour:'—',value:0}; const peakYear=[...yearAgg].sort((a,b)=>b.value-a.value)[0]||{hour:'—',value:0}; const peakOI=[...oiAgg].sort((a,b)=>b.value-a.value)[0]||{hour:'—',value:0}; const monthTotals=MONTHS.map(m=>({month:m,val:hourlyFiltered(metric,[m]).reduce((s,r)=>s+Number(r.value||0),0)})); const peakMonth=monthTotals.sort((a,b)=>b.val-a.val)[0]||{month:'—',val:0}; setText('horaPuntaGlobal',peakGlobal.hour); setText('horaPuntaGlobalSub',`${fmtInt(peakGlobal.value)} registros históricos`); setText('horaPuntaYear',peakYear.hour); setText('horaPuntaYearSub',`${fmtInt(peakYear.value)} registros en ${getYearLabel()}`); setText('mesPunta',peakMonth.month.slice(0,3)); setText('mesPuntaSub',`${fmtInt(peakMonth.val)} registros del período seleccionado`); setText('horaOI',peakOI.hour); setText('horaOISub',`${fmtInt(peakOI.value)} registros entre abril y agosto`); makeChart('chartHorarioPerfil',{type:'bar',data:{labels:HOURS,datasets:[{label:metric,data:yearAgg.map(x=>x.value)}]},options:baseOptions()}); makeChart('chartHorarioOI',{type:'line',data:{labels:HOURS,datasets:[{label:metric+' · Abr-Ago',data:oiAgg.map(x=>x.value),tension:.25}]},options:baseOptions()}); const matrix=HOURS.map(h=>{ const vals=MONTHS.map(m=>hourlyFiltered(metric,[m]).filter(r=>r.hour===h).reduce((s,r)=>s+Number(r.value||0),0)); return {hour:h,vals,total:vals.reduce((a,b)=>a+b,0)}; }); const maxVal=Math.max(1,...matrix.flatMap(r=>r.vals)); el('horarioHeatBody').innerHTML=matrix.map(r=>`<tr><td><strong>${r.hour}</strong></td>${r.vals.map(v=>`<td class="num heat" style="background:rgba(34,197,220,${Math.max(.06,v/maxVal).toFixed(3)})">${fmtInt(v)}</td>`).join('')}<td class="num"><strong>${fmtInt(r.total)}</strong></td></tr>`).join(''); const calYear=currentYear==='TODOS'?2026:currentYear; const rows=DATA.calendar_records.filter(r=>r.year===calYear).sort((a,b)=>a.month_index-b.month_index); el('calendarBody').innerHTML=rows.map(r=>`<tr><td><strong>${r.month}</strong>${r.local_holiday_days?' <span class="badge-soft">20 AGO local</span>':''}</td><td class="num">${fmtInt(r.days_in_month)}</td><td class="num">${fmtInt(r.weekend_days)}</td><td class="num">${fmtInt(r.holiday_days)}</td><td class="num">${fmtInt(r.non_working_days)}</td><td class="num">${fmtInt(r.business_days)}</td><td class="mini">${(r.holiday_names||[]).join(' · ')||'—'}</td></tr>`).join(''); }
+function initComparacion(){ el('cmpMonths').innerHTML=MONTHS.map(m=>`<option value="${m}">${m}</option>`).join(''); el('cmpYears').innerHTML=DATA.metadata.years.map(y=>`<option value="${y}">${y}</option>`).join(''); ['ABRIL','MAYO','JUNIO','JULIO'].forEach(m=>{ const opt=[...el('cmpMonths').options].find(o=>o.value===m); if(opt) opt.selected=true; }); [2024,2025,2026].forEach(y=>{ const opt=[...el('cmpYears').options].find(o=>Number(o.value)===y); if(opt) opt.selected=true; }); el('cmpApply').onclick=renderComparacion; el('cmpMetric').onchange=renderComparacion; }
+function readMulti(id,max){ const vals=[...el(id).selectedOptions].map(o=>o.value); if(vals.length>max){ vals.splice(max); [...el(id).options].forEach(o=>o.selected=vals.includes(o.value)); } return vals; }
+function renderComparacion(){ const metric=el('cmpMetric').value; const months=readMulti('cmpMonths',4); const years=readMulti('cmpYears',3).map(Number); el('cmpHead').innerHTML=['<th>Año</th>',...months.map(m=>`<th class="num">${m}</th>`),'<th class="num">Total</th>'].join(''); const rows=years.map(y=>{ const vals=months.map(m=>getValue('kpi_general',metric,y,m)); return {year:y,vals,total:vals.reduce((a,b)=>a+b,0)}; }); el('cmpBody').innerHTML=rows.map(r=>`<tr><td><strong>${r.year}</strong></td>${r.vals.map(v=>`<td class="num">${fmtInt(v)}</td>`).join('')}<td class="num"><strong>${fmtInt(r.total)}</strong></td></tr>`).join(''); makeChart('chartComparacion',{type:'bar',data:{labels:months,datasets:rows.map(r=>({label:String(r.year),data:r.vals}))},options:baseOptions()}); }
+function renderProyeccion(){ const targetMonths=['ABRIL','MAYO','JUNIO','JULIO','AGOSTO']; const recentYears=DATA.metadata.years.filter(y=>y<2026).slice(-3); const histYears=DATA.metadata.years.filter(y=>y<2026); const ytd2026=['ENERO','FEBRERO','MARZO'].reduce((s,m)=>s+getValue('kpi_general','TOTAL ATENDIDOS',2026,m),0); const ytdBase=recentYears.length?recentYears.map(y=>['ENERO','FEBRERO','MARZO'].reduce((s,m)=>s+getValue('kpi_general','TOTAL ATENDIDOS',y,m),0)).reduce((a,b)=>a+b,0)/recentYears.length:0; const momentum=ytdBase?ytd2026/ytdBase:1; const proj=targetMonths.map(m=>{ const hist=histYears.map(y=>getValue('kpi_general','TOTAL ATENDIDOS',y,m)).filter(v=>v>0); const recent=recentYears.map(y=>getValue('kpi_general','TOTAL ATENDIDOS',y,m)).filter(v=>v>0); const histAvg=hist.length?hist.reduce((a,b)=>a+b,0)/hist.length:0; const recentAvg=recent.length?recent.reduce((a,b)=>a+b,0)/recent.length:histAvg; const base=Math.round((recentAvg*0.7 + histAvg*0.3) * (0.75 + 0.25*momentum)); const high=Math.round(Math.max(base*1.1, recentAvg*1.05)); const low=Math.round(base*0.9); let note='Presión moderada'; if(['JUNIO','JULIO'].includes(m)) note='Bloque crítico invernal'; else if(m==='AGOSTO') note='Persistencia alta por rezago estacional'; else if(m==='ABRIL') note='Inicio de escalamiento'; return {month:m,histAvg,high,base,low,note}; }); setText('projHighTotal',fmtInt(proj.reduce((s,r)=>s+r.high,0))); setText('projBaseTotal',fmtInt(proj.reduce((s,r)=>s+r.base,0))); setText('projLowTotal',fmtInt(proj.reduce((s,r)=>s+r.low,0))); makeChart('chartProyeccion',{type:'line',data:{labels:targetMonths,datasets:[{label:'Alta demanda',data:proj.map(r=>r.high),tension:.25},{label:'Base',data:proj.map(r=>r.base),tension:.25},{label:'Favorable',data:proj.map(r=>r.low),tension:.25}]},options:baseOptions()}); el('projBody').innerHTML=proj.map(r=>`<tr><td><strong>${r.month}</strong></td><td class="num">${fmtInt(r.histAvg)}</td><td class="num">${fmtInt(r.high)}</td><td class="num">${fmtInt(r.base)}</td><td class="num">${fmtInt(r.low)}</td><td>${r.note}</td></tr>`).join(''); }
+function renderAll(){ el('yearBadge').textContent='Contexto: '+getYearLabel(); renderResumen(); renderHistorico(); renderTriage(); renderPoblacion(); renderCentros(); renderHorarios(); renderComparacion(); renderProyeccion(); }
+async function init(){ const res=await fetch('sar_dashboard_plus_2026.json',{cache:'no-store'}); DATA=await res.json(); renderYearButtons(); initMotivoSelector(); initComparacion(); el('horarioMetric').onchange=renderHorarios; document.querySelectorAll('.tabbtn').forEach(btn=>btn.onclick=()=>{ document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.section').forEach(s=>s.classList.remove('active')); el('section-'+btn.dataset.tab).classList.add('active'); }); renderAll(); }
+init().catch(err=>{ document.body.innerHTML='<div style="padding:24px;color:#fff">Error al cargar el dashboard: '+err.message+'</div>'; console.error(err); });
 </script>
 </body>
 </html>
