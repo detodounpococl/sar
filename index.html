@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard SAR 2019–2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#050E1A; --bg2:#091525; --card:#0D1E30; --card2:#112540;
+  --border:rgba(0,180,160,.12); --teal:#00B4A0; --teal2:#00D4BC; --cyan:#22C5DC;
+  --amber:#F5A623; --rose:#F05060; --violet:#7B83E8; --green:#4CAF7D;
+  --text:#D8E4F0; --muted:#6A8099; --font:'Syne',sans-serif; --mono:'IBM Plex Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh}
+.header{background:linear-gradient(135deg,var(--bg2) 0%,#06131F 100%);border-bottom:1px solid var(--border);
+  padding:14px 24px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:50}
+.header-left{display:flex;align-items:center;gap:14px}
+.badge{background:linear-gradient(135deg,var(--teal),var(--cyan));color:#000;font-weight:800;font-size:12px;
+  padding:5px 12px;border-radius:5px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono)}
+.header h1{font-size:18px}
+.header p{font-size:11px;color:var(--muted);margin-top:3px}
+.header-right{text-align:right;font-size:11px;color:var(--muted)}
+.header-right strong{display:block;color:var(--text);font-size:13px}
+.header-right a{color:var(--teal);text-decoration:none}
+.toolbar,.tabbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.tabbar{padding-top:0}
+.label{font-family:var(--mono);font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px}
+.ybtn,.tabbtn,.ghostbtn{
+  padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);
+  font:600 11px var(--mono);cursor:pointer;transition:.15s
+}
+.ybtn:hover,.tabbtn:hover,.ghostbtn:hover{border-color:var(--cyan);color:var(--cyan)}
+.ybtn.active,.tabbtn.active{background:rgba(0,180,160,.14);border-color:var(--teal);color:var(--teal2)}
+.tabbtn{padding:8px 14px;text-transform:uppercase;letter-spacing:1px}
+.content{padding:22px 24px}
+.panel{display:none}
+.panel.active{display:block}
+.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2.4px;color:var(--teal);
+  margin:0 0 14px 0;display:flex;align-items:center;gap:10px;font-family:var(--mono)}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi-card,.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px}
+.kpi-card{position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;left:0;right:0;top:0;height:3px}
+.kpi-card.teal::before{background:linear-gradient(90deg,var(--teal),var(--cyan))}
+.kpi-card.green::before{background:linear-gradient(90deg,var(--green),#2A7D50)}
+.kpi-card.amber::before{background:linear-gradient(90deg,var(--amber),#D4880A)}
+.kpi-card.rose::before{background:linear-gradient(90deg,var(--rose),#A0102A)}
+.kpi-card.violet::before{background:linear-gradient(90deg,var(--violet),#3945C0)}
+.kpi-label{font-size:10px;font-family:var(--mono);text-transform:uppercase;color:var(--muted);letter-spacing:1.4px;margin-bottom:10px}
+.kpi-value{font:700 30px var(--mono);line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.4}
+.grid-2{display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-bottom:20px}
+.grid-2-eq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px}
+.chart-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.chart-sub{font-size:11px;color:var(--muted);margin-bottom:12px}
+.chart-wrap{position:relative;height:290px}
+.chart-wrap.short{height:220px}
+.table-wrap{overflow:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.05)}
+th{text-align:left;font:600 10px var(--mono);text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+td{font-size:12px;color:var(--text)}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:11px}
+.note{font-size:11px;color:var(--muted)}
+.context-badge{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;
+  font:700 11px var(--mono);background:rgba(0,180,160,.15);border:1px solid rgba(0,180,160,.3);color:var(--teal2)}
+.footer{text-align:center;padding:16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted);font-family:var(--mono)}
+.loading,.error{padding:18px;border:1px solid var(--border);background:var(--card);border-radius:12px}
+.error{border-color:rgba(240,80,96,.28);color:#ff9aa5}
+@media(max-width:1200px){
+  .kpi-grid,.grid-3,.grid-2,.grid-2-eq{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <div class="badge">SAR</div>
+    <div>
+      <h1>Dashboard de Monitoreo · 2019–2026</h1>
+      <p>Servicio de Atención de Urgencia Rural · histórico actualizado con 2026</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <strong>Rodrigo Villalobos R.</strong>
+    <a href="mailto:rodrigovillalobos1978@gmail.com">rodrigovillalobos1978@gmail.com</a>
+    <div id="clock"></div>
+  </div>
+</div>
+
+<div class="toolbar">
+  <span class="label">Año</span>
+  <div id="yearButtons"></div>
+  <span style="flex:1"></span>
+  <div class="context-badge" id="yearBadge">—</div>
+</div>
+
+<div class="tabbar">
+  <button class="tabbtn active" data-tab="resumen">Resumen</button>
+  <button class="tabbtn" data-tab="historico">Histórico</button>
+  <button class="tabbtn" data-tab="triage">Triage</button>
+  <button class="tabbtn" data-tab="poblacion">Población</button>
+  <button class="tabbtn" data-tab="centros">Centros</button>
+</div>
+
+<div class="content">
+  <div id="status" class="loading">Cargando sar.json…</div>
+
+  <div class="panel active" id="panel-resumen" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="section-label" style="margin-bottom:0;flex:1">Indicadores Clave</div>
+      <div class="context-badge" id="periodBadge">—</div>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card teal"><div class="kpi-label">Total Inscritos</div><div class="kpi-value" id="kpiI">—</div><div class="kpi-sub" id="kpiISub">—</div></div>
+      <div class="kpi-card green"><div class="kpi-label">Total Atendidos</div><div class="kpi-value" id="kpiA">—</div><div class="kpi-sub" id="kpiASub">—</div></div>
+      <div class="kpi-card amber"><div class="kpi-label">Total NSP</div><div class="kpi-value" id="kpiN">—</div><div class="kpi-sub" id="kpiNSub">—</div></div>
+      <div class="kpi-card rose"><div class="kpi-label">Rendimiento</div><div class="kpi-value" id="kpiR">—</div><div class="kpi-sub" id="kpiRSub">—</div></div>
+    </div>
+
+    <div class="grid-2-eq">
+      <div class="card">
+        <div class="chart-title">Evolución mensual</div>
+        <div class="chart-sub">Inscritos vs atendidos vs NSP</div>
+        <div class="chart-wrap"><canvas id="monthlyChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Rendimiento mensual</div>
+        <div class="chart-sub">% atendidos / inscritos</div>
+        <div class="chart-wrap"><canvas id="performanceChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="chart-title">Triage acumulado</div>
+        <div class="chart-sub">C1 a C5</div>
+        <div class="chart-wrap short"><canvas id="triageChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">NSP pediátrico vs adulto</div>
+        <div class="chart-sub">Acumulado anual</div>
+        <div class="chart-wrap short"><canvas id="nspSplitChart"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Población atendida</div>
+        <div class="chart-sub">Pediátrico vs adulto</div>
+        <div class="chart-wrap short"><canvas id="populationChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-historico">
+    <div class="section-label">Comparativo histórico 2019–2026</div>
+    <div class="grid-3">
+      <div class="card"><div class="chart-title">Atendidos por año</div><div class="chart-sub">Acumulado anual</div><div class="chart-wrap short"><canvas id="histAtendidosChart"></canvas></div></div>
+      <div class="card"><div class="chart-title">Rendimiento anual</div><div class="chart-sub">% atendidos / inscritos</div><div class="chart-wrap short"><canvas id="histRendChart"></canvas></div></div>
+      <div class="card"><div class="chart-title">NSP anual</div><div class="chart-sub">Acumulado anual</div><div class="chart-wrap short"><canvas id="histNspChart"></canvas></div></div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Evolución mensual comparada</div>
+      <div class="chart-sub">Total atendidos por mes, todos los años</div>
+      <div class="chart-wrap"><canvas id="histMonthlyChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-triage">
+    <div class="section-label">Triage</div>
+    <div class="kpi-grid">
+      <div class="kpi-card violet"><div class="kpi-label">C2</div><div class="kpi-value" id="tc2">—</div><div class="kpi-sub" id="tc2p">—</div></div>
+      <div class="kpi-card amber"><div class="kpi-label">C3</div><div class="kpi-value" id="tc3">—</div><div class="kpi-sub" id="tc3p">—</div></div>
+      <div class="kpi-card teal"><div class="kpi-label">C4</div><div class="kpi-value" id="tc4">—</div><div class="kpi-sub" id="tc4p">—</div></div>
+      <div class="kpi-card rose"><div class="kpi-label">C5</div><div class="kpi-value" id="tc5">—</div><div class="kpi-sub" id="tc5p">—</div></div>
+    </div>
+    <div class="grid-2-eq">
+      <div class="card"><div class="chart-title">Distribución mensual de triage</div><div class="chart-sub">C2 a C5</div><div class="chart-wrap"><canvas id="triageMonthlyChart"></canvas></div></div>
+      <div class="card"><div class="chart-title">Motivos de consulta destacados</div><div class="chart-sub">Respiratorio, lesiones, alcoholemias, mordedura de perro y accidentes en el hogar</div><div class="chart-wrap"><canvas id="motivosChart"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-poblacion">
+    <div class="section-label">Población atendida</div>
+    <div class="grid-2-eq">
+      <div class="card"><div class="chart-title">Atendidos por grupo</div><div class="chart-sub">Pediátrico y adulto por mes</div><div class="chart-wrap"><canvas id="pedAdultChart"></canvas></div></div>
+      <div class="card"><div class="chart-title">Composición anual</div><div class="chart-sub">Participación pediátrico vs adulto</div><div class="chart-wrap"><canvas id="pedAdultDonut"></canvas></div></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-centros">
+    <div class="section-label">Centros de salud de origen</div>
+    <div class="grid-2-eq">
+      <div class="card"><div class="chart-title">Top 8 centros</div><div class="chart-sub">Atendidos acumulados del año seleccionado</div><div class="chart-wrap"><canvas id="centrosChart"></canvas></div></div>
+      <div class="card">
+        <div class="chart-title">Observaciones del set</div>
+        <div class="chart-sub">Validaciones y notas</div>
+        <div id="notesBox" class="note"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="chart-title">Tabla de centros</div>
+      <div class="chart-sub">Valores mensuales del año seleccionado</div>
+      <div class="table-wrap"><table><thead><tr>
+        <th>Centro</th>
+        <th class="num">Ene</th><th class="num">Feb</th><th class="num">Mar</th><th class="num">Abr</th><th class="num">May</th><th class="num">Jun</th>
+        <th class="num">Jul</th><th class="num">Ago</th><th class="num">Sep</th><th class="num">Oct</th><th class="num">Nov</th><th class="num">Dic</th>
+        <th class="num">Total</th><th class="num">%</th>
+      </tr></thead><tbody id="centrosBody"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Autor: Rodrigo Villalobos R. · rodrigovillalobos1978@gmail.com · <span id="footerDate"></span></div>
+
+<script>
+let DATA = null;
+let currentYear = 2026;
+const charts = {};
+
+const MONTHS = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+
+function fmtInt(v){ return Number(v||0).toLocaleString('es-CL'); }
+function fmtPct(v){ return isFinite(v) ? `${v.toFixed(1)}%` : '—'; }
+function el(id){ return document.getElementById(id); }
+
+function clockTick(){
+  const now = new Date();
+  el('clock').textContent = now.toLocaleString('es-CL');
+  el('footerDate').textContent = 'Actualizado visualmente: ' + now.toLocaleDateString('es-CL');
+}
+setInterval(clockTick, 1000); clockTick();
+
+function destroyChart(id){ if(charts[id]) charts[id].destroy(); }
+function makeChart(id, config){ destroyChart(id); charts[id] = new Chart(el(id), config); }
+
+function getValue(section, item, year, month){
+  const row = DATA.records.find(r => r.section===section && r.item===item && r.year===year && r.month===month);
+  return row ? Number(row.value||0) : 0;
+}
+function series(section, item, year){
+  return MONTHS.map(m => getValue(section,item,year,m));
+}
+function annual(section,item,year){
+  return getValue(section,item,year,'ACUMULADO');
+}
+function annualOrSum(section,item,year){
+  const acc = annual(section,item,year);
+  return acc || series(section,item,year).reduce((a,b)=>a+b,0);
+}
+function yoyText(section,item,year){
+  const years = DATA.metadata.years;
+  const idx = years.indexOf(year);
+  if(idx<=0) return 'Sin comparación previa';
+  const prev = annualOrSum(section,item,years[idx-1]);
+  const cur = annualOrSum(section,item,year);
+  if(!prev) return 'Sin base previa';
+  const pct = ((cur-prev)/prev)*100;
+  return `${pct>=0?'+':''}${pct.toFixed(1)}% vs ${years[idx-1]}`;
+}
+function renderYearButtons(){
+  const wrap = el('yearButtons');
+  wrap.innerHTML = '';
+  DATA.metadata.years.forEach(y => {
+    const b = document.createElement('button');
+    b.className = 'ybtn' + (y===currentYear ? ' active':'');
+    b.textContent = y;
+    b.onclick = () => { currentYear = y; renderAll(); renderYearButtons(); };
+    wrap.appendChild(b);
+  });
+}
+function setText(id, value){ el(id).textContent = value; }
+
+function renderResumen(){
+  const y = currentYear;
+  const ins = annualOrSum('kpi_general','TOTAL INSCRITOS',y);
+  const ate = annualOrSum('kpi_general','TOTAL ATENDIDOS',y);
+  const nsp = annualOrSum('kpi_general','TOTAL NSP',y);
+  const ped = annualOrSum('kpi_general','ATENDIDOS <15 AÑOS',y);
+  const adu = annualOrSum('kpi_general','ATENDIDOS ≥15 AÑOS',y);
+  const nspPed = annualOrSum('kpi_general','NSP PEDIÁTRICOS',y);
+  const nspAdu = annualOrSum('kpi_general','NSP ADULTOS',y);
+  const performance = ins ? (ate/ins)*100 : 0;
+
+  setText('kpiI', fmtInt(ins));
+  setText('kpiA', fmtInt(ate));
+  setText('kpiN', fmtInt(nsp));
+  setText('kpiR', fmtPct(performance));
+  setText('kpiISub', yoyText('kpi_general','TOTAL INSCRITOS',y));
+  setText('kpiASub', yoyText('kpi_general','TOTAL ATENDIDOS',y));
+  setText('kpiNSub', yoyText('kpi_general','TOTAL NSP',y));
+  setText('kpiRSub', ins ? `${fmtInt(ins-nsp)} registrados efectivos sobre inscritos` : 'Sin base');
+  setText('periodBadge', `Año seleccionado: ${y}`);
+  setText('yearBadge', `${y} activo`);
+
+  makeChart('monthlyChart',{
+    type:'line',
+    data:{labels:MONTHS,datasets:[
+      {label:'Inscritos',data:series('kpi_general','TOTAL INSCRITOS',y),borderColor:'#22C5DC',backgroundColor:'transparent',tension:.25},
+      {label:'Atendidos',data:series('kpi_general','TOTAL ATENDIDOS',y),borderColor:'#4CAF7D',backgroundColor:'transparent',tension:.25},
+      {label:'NSP',data:series('kpi_general','TOTAL NSP',y),borderColor:'#F5A623',backgroundColor:'transparent',tension:.25}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+
+  makeChart('performanceChart',{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[{label:'Rendimiento %',data:MONTHS.map(m=>{
+      const i=getValue('kpi_general','TOTAL INSCRITOS',y,m), a=getValue('kpi_general','TOTAL ATENDIDOS',y,m);
+      return i ? (a/i)*100 : 0;
+    })}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+
+  makeChart('triageChart',{
+    type:'doughnut',
+    data:{labels:['C1','C2','C3','C4','C5'],datasets:[{data:['C1','C2','C3','C4','C5'].map(k=>annualOrSum('triage',k,y))}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
+  });
+
+  makeChart('nspSplitChart',{
+    type:'bar',
+    data:{labels:['Pediátrico','Adulto'],datasets:[{label:'NSP',data:[nspPed,nspAdu]}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+
+  makeChart('populationChart',{
+    type:'pie',
+    data:{labels:['<15 años','≥15 años'],datasets:[{data:[ped,adu]}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
+  });
+}
+
+function renderHistorico(){
+  const years = DATA.metadata.years;
+  const attended = years.map(y => annualOrSum('kpi_general','TOTAL ATENDIDOS',y));
+  const inscritos = years.map(y => annualOrSum('kpi_general','TOTAL INSCRITOS',y));
+  const nsp = years.map(y => annualOrSum('kpi_general','TOTAL NSP',y));
+  const rend = years.map((y,i) => inscritos[i] ? (attended[i]/inscritos[i])*100 : 0);
+
+  makeChart('histAtendidosChart',{
+    type:'bar',
+    data:{labels:years,datasets:[{label:'Atendidos',data:attended}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+  makeChart('histRendChart',{
+    type:'line',
+    data:{labels:years,datasets:[{label:'Rendimiento %',data:rend,borderColor:'#00D4BC',backgroundColor:'transparent',tension:.25}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+  makeChart('histNspChart',{
+    type:'bar',
+    data:{labels:years,datasets:[{label:'NSP',data:nsp}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+  makeChart('histMonthlyChart',{
+    type:'line',
+    data:{labels:MONTHS,datasets:years.map(y=>({
+      label:String(y),
+      data:series('kpi_general','TOTAL ATENDIDOS',y),
+      tension:.22
+    }))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+}
+
+function renderTriage(){
+  const y = currentYear;
+  ['C2','C3','C4','C5'].forEach(key=>{
+    const total = annualOrSum('triage',key,y);
+    const all = annualOrSum('triage','TOTAL TRIAGE',y);
+    setText('t'+key.toLowerCase(), fmtInt(total));
+    setText('t'+key.toLowerCase()+'p', all ? fmtPct((total/all)*100) + ' del total triage' : 'Sin base');
+  });
+
+  makeChart('triageMonthlyChart',{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[
+      {label:'C2',data:series('triage','C2',y)},
+      {label:'C3',data:series('triage','C3',y)},
+      {label:'C4',data:series('triage','C4',y)},
+      {label:'C5',data:series('triage','C5',y)}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{stacked:true,ticks:{color:'#6A8099'}},y:{stacked:true,ticks:{color:'#6A8099'}}}}
+  });
+
+  const motivos = [
+    'RESPIRATORIO',
+    'Constatacion de lesiones',
+    'Alcoholemias',
+    'Mordedura de Perro',
+    'Accidentes en el Hogar'
+  ];
+  makeChart('motivosChart',{
+    type:'line',
+    data:{labels:MONTHS,datasets:motivos.map(m=>({label:m,data:series('motivo_consulta',m,y),tension:.25}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+}
+
+function renderPoblacion(){
+  const y = currentYear;
+  const pedSeries = series('kpi_general','ATENDIDOS <15 AÑOS',y);
+  const aduSeries = series('kpi_general','ATENDIDOS ≥15 AÑOS',y);
+
+  makeChart('pedAdultChart',{
+    type:'bar',
+    data:{labels:MONTHS,datasets:[
+      {label:'<15 años',data:pedSeries},
+      {label:'≥15 años',data:aduSeries}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+
+  makeChart('pedAdultDonut',{
+    type:'doughnut',
+    data:{labels:['<15 años','≥15 años'],datasets:[{data:[annualOrSum('kpi_general','ATENDIDOS <15 AÑOS',y),annualOrSum('kpi_general','ATENDIDOS ≥15 AÑOS',y)]}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}}}
+  });
+}
+
+function renderCentros(){
+  const y = currentYear;
+  const items = [...new Set(DATA.records.filter(r => r.section==='centro_salud_atendido' && r.year===y && r.month==='ACUMULADO').map(r=>r.item))]
+    .filter(i => i !== 'Todos los CESFAM');
+  const rows = items.map(item => {
+    const vals = MONTHS.map(m => getValue('centro_salud_atendido',item,y,m));
+    const total = annualOrSum('centro_salud_atendido',item,y);
+    return {item, vals, total};
+  }).sort((a,b)=>b.total-a.total);
+
+  const grand = annualOrSum('centro_salud_atendido','Todos los CESFAM',y) || rows.reduce((a,r)=>a+r.total,0);
+  const top8 = rows.slice(0,8);
+
+  makeChart('centrosChart',{
+    type:'bar',
+    data:{labels:top8.map(r=>r.item),datasets:[{label:'Atendidos',data:top8.map(r=>r.total)}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#D8E4F0'}}},scales:{x:{ticks:{color:'#6A8099'}},y:{ticks:{color:'#6A8099'}}}}
+  });
+
+  el('centrosBody').innerHTML = rows.map(r => `
+    <tr>
+      <td>${r.item}</td>
+      ${r.vals.map(v=>`<td class="num">${fmtInt(v)}</td>`).join('')}
+      <td class="num">${fmtInt(r.total)}</td>
+      <td class="num">${fmtPct(grand ? (r.total/grand)*100 : 0)}</td>
+    </tr>
+  `).join('');
+
+  el('notesBox').innerHTML = `
+    <div style="display:grid;gap:10px">
+      <div>• Total año seleccionado: <strong>${fmtInt(grand)}</strong>.</div>
+      <div>• Años disponibles: <strong>${DATA.metadata.years.join(', ')}</strong>.</div>
+      <div>• Fuente: <strong>${DATA.metadata.source_file}</strong>.</div>
+      <div>• Anomalías informadas en JSON: <strong>${DATA.anomalies.length}</strong>.</div>
+      ${DATA.metadata.notes.map(n=>`<div>• ${n}</div>`).join('')}
+    </div>
+  `;
+}
+
+function renderAll(){
+  renderResumen();
+  renderHistorico();
+  renderTriage();
+  renderPoblacion();
+  renderCentros();
+}
+
+function initTabs(){
+  document.querySelectorAll('.tabbtn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      document.querySelectorAll('.tabbtn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const tab = btn.dataset.tab;
+      document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p=>p.style.display='none');
+      const panel = el('panel-'+tab);
+      panel.classList.add('active');
+      panel.style.display='block';
+    });
+  });
+}
+
+fetch('sar.json')
+  .then(r => {
+    if(!r.ok) throw new Error('No se pudo abrir sar.json');
+    return r.json();
+  })
+  .then(json => {
+    DATA = json;
+    if(DATA?.metadata?.years?.includes(2026)) currentYear = 2026;
+    el('status').style.display = 'none';
+    document.querySelectorAll('.panel').forEach((p,i)=>{ p.style.display = i===0 ? 'block':'none'; });
+    renderYearButtons();
+    renderAll();
+    initTabs();
+  })
+  .catch(err => {
+    el('status').className = 'error';
+    el('status').textContent = 'Error cargando sar.json: ' + err.message + '. Deja este HTML en la misma carpeta que sar.json.';
+  });
+</script>
+</body>
+</html>
