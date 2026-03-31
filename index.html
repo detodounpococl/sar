@@ -3,826 +3,818 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard SAR – Urgencias Hospitalarias</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<title>Dashboard SAR — Urgencias</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --bg: #0d1117;
-    --panel: #161b22;
-    --panel2: #1c2230;
-    --border: #30363d;
-    --accent: #1f6feb;
-    --accent2: #388bfd;
-    --green: #3fb950;
-    --red: #f85149;
-    --yellow: #d29922;
-    --orange: #e3b341;
-    --text: #e6edf3;
-    --text2: #8b949e;
-    --text3: #c9d1d9;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; font-size: 14px; min-height: 100vh; }
-
-  /* HEADER */
-  .header { background: linear-gradient(135deg, #0d1117 0%, #1a2332 100%); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
-  .header-left { display: flex; align-items: center; gap: 14px; }
-  .logo { width: 40px; height: 40px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-  .header-title h1 { font-size: 17px; font-weight: 700; color: var(--text); }
-  .header-title p { font-size: 11px; color: var(--text2); margin-top: 2px; }
-  .header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .datetime-badge { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; text-align: right; }
-  .datetime-badge .date { font-size: 12px; color: var(--text2); }
-  .datetime-badge .time { font-size: 16px; font-weight: 700; color: var(--accent2); }
-  .author-badge { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-size: 11px; color: var(--text2); }
-  .author-badge strong { color: var(--text3); display: block; }
-
-  /* TOOLBAR */
-  .toolbar { background: var(--panel); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .btn { padding: 7px 14px; border-radius: 7px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; display: inline-flex; align-items: center; gap: 6px; }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-primary:hover { background: var(--accent2); }
-  .btn-secondary { background: var(--panel2); color: var(--text3); }
-  .btn-secondary:hover { border-color: var(--accent); color: var(--accent2); }
-  .btn-danger { background: transparent; color: var(--red); border-color: var(--red); }
-  .btn-danger:hover { background: rgba(248,81,73,.1); }
-  .btn-green { background: transparent; color: var(--green); border-color: var(--green); }
-  .btn-green:hover { background: rgba(63,185,80,.1); }
-  .toolbar-sep { width: 1px; height: 28px; background: var(--border); }
-
-  /* FILTERS */
-  .filters { background: var(--panel); border-bottom: 1px solid var(--border); padding: 10px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-  .filter-group { display: flex; align-items: center; gap: 6px; }
-  .filter-group label { font-size: 11px; color: var(--text2); font-weight: 600; white-space: nowrap; }
-  select, .multi-select { background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 7px; padding: 5px 10px; font-size: 12px; cursor: pointer; }
-  select:focus { outline: none; border-color: var(--accent); }
-  .multi-btn { padding: 4px 9px; font-size: 11px; border-radius: 5px; border: 1px solid var(--border); background: var(--panel2); color: var(--text2); cursor: pointer; transition: all .15s; }
-  .multi-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-  /* MAIN */
-  .main { padding: 20px 24px; }
-
-  /* ALERTS */
-  .alerts { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
-  .alert { border-radius: 9px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; font-size: 12px; }
-  .alert-red { background: rgba(248,81,73,.12); border: 1px solid rgba(248,81,73,.4); }
-  .alert-yellow { background: rgba(227,179,65,.1); border: 1px solid rgba(227,179,65,.35); }
-  .alert-green { background: rgba(63,185,80,.1); border: 1px solid rgba(63,185,80,.35); }
-  .alert-icon { font-size: 16px; }
-  .alert-text { color: var(--text3); }
-  .alert-text strong { font-weight: 700; }
-
-  /* KPI GRID */
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 20px; }
-  .kpi-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
-  .kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 12px 12px 0 0; }
-  .kpi-blue::before { background: var(--accent); }
-  .kpi-green::before { background: var(--green); }
-  .kpi-yellow::before { background: var(--yellow); }
-  .kpi-red::before { background: var(--red); }
-  .kpi-orange::before { background: var(--orange); }
-  .kpi-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
-  .kpi-value { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1; }
-  .kpi-sub { font-size: 11px; color: var(--text2); margin-top: 6px; }
-  .kpi-delta { font-size: 12px; font-weight: 700; margin-top: 4px; }
-  .kpi-delta.up { color: var(--green); }
-  .kpi-delta.down { color: var(--red); }
-
-  /* CHART GRID */
-  .chart-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .chart-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
-  .chart-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--text3); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-  .card-title span { background: var(--panel2); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; font-size: 10px; color: var(--text2); font-weight: 500; }
-  .chart-wrap { position: relative; height: 220px; }
-  .chart-wrap-sm { position: relative; height: 180px; }
-  .chart-wrap-lg { position: relative; height: 280px; }
-
-  /* HEATMAP */
-  .heatmap-container { overflow-x: auto; }
-  .heatmap-table { border-collapse: collapse; width: 100%; font-size: 10px; }
-  .heatmap-table th { padding: 3px 5px; color: var(--text2); font-weight: 600; text-align: center; white-space: nowrap; }
-  .heatmap-table td { width: 28px; height: 24px; text-align: center; border-radius: 3px; font-size: 9px; font-weight: 600; cursor: default; transition: opacity .15s; }
-  .heatmap-table td:hover { opacity: .7; transform: scale(1.15); }
-  .hm-label { color: var(--text2) !important; background: transparent !important; font-size: 10px !important; padding-right: 8px; text-align: right !important; white-space: nowrap; }
-
-  /* PROJECTION */
-  .projection-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .proj-month { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; }
-  .proj-month .pm-name { font-size: 11px; color: var(--text2); font-weight: 600; }
-  .proj-month .pm-val { font-size: 20px; font-weight: 800; margin: 4px 0 2px; }
-  .proj-month .pm-tag { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; }
-  .tag-high { background: rgba(248,81,73,.2); color: var(--red); }
-  .tag-mid { background: rgba(227,179,65,.2); color: var(--orange); }
-  .tag-low { background: rgba(63,185,80,.2); color: var(--green); }
-
-  /* COMPARATOR SELECTOR */
-  .comp-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-
-  /* SECTION TITLE */
-  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
-
-  /* FOOTER */
-  .footer { background: var(--panel); border-top: 1px solid var(--border); padding: 12px 24px; text-align: center; font-size: 11px; color: var(--text2); }
-  .footer a { color: var(--accent2); text-decoration: none; }
-
-  /* MODAL */
-  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 200; display: none; align-items: center; justify-content: center; }
-  .modal-overlay.show { display: flex; }
-  .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 28px; width: 360px; }
-  .modal h3 { font-size: 15px; margin-bottom: 18px; }
-  .modal input { width: 100%; background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 12px; font-size: 14px; margin-bottom: 14px; }
-  .modal input:focus { outline: none; border-color: var(--accent); }
-  .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
-  .modal-error { color: var(--red); font-size: 12px; margin-bottom: 10px; display: none; }
-
-  @media (max-width: 900px) {
-    .chart-grid, .chart-grid-3, .chart-grid-2 { grid-template-columns: 1fr; }
-    .projection-grid { grid-template-columns: repeat(2, 1fr); }
-  }
+:root {
+  --bg-main:#0f172a;--bg-card:#1e293b;--bg-card2:#162032;--border:#334155;
+  --accent:#0ea5e9;--accent2:#10b981;--accent3:#f59e0b;--accent4:#ef4444;
+  --accent5:#a855f7;--text:#e2e8f0;--text-muted:#94a3b8;--text-dim:#64748b;
+  --shadow:0 4px 24px rgba(0,0,0,.4);
+}
+.light{
+  --bg-main:#f1f5f9;--bg-card:#fff;--bg-card2:#f8fafc;--border:#cbd5e1;
+  --text:#1e293b;--text-muted:#475569;--text-dim:#94a3b8;
+  --shadow:0 4px 24px rgba(0,0,0,.08);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg-main);color:var(--text);min-height:100vh;transition:background .3s,color .3s}
+/* HEADER */
+.header{background:var(--bg-card);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.header-left{display:flex;flex-direction:column;gap:2px}
+.header-title{font-size:1.15rem;font-weight:700;color:var(--accent);display:flex;align-items:center;gap:8px}
+.header-sub{font-size:.72rem;color:var(--text-muted)}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.clock-box{background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:4px 12px;text-align:right}
+.clock-time{font-size:1.1rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+.clock-date{font-size:.68rem;color:var(--text-muted)}
+/* BUTTONS */
+.btn{border:none;border-radius:8px;padding:6px 12px;font-size:.78rem;font-family:'Outfit',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .2s;white-space:nowrap}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{opacity:.85}
+.btn-success{background:var(--accent2);color:#fff}.btn-success:hover{opacity:.85}
+.btn-warning{background:var(--accent3);color:#000}.btn-warning:hover{opacity:.85}
+.btn-ghost{background:transparent;color:var(--text-muted);border:1px solid var(--border)}.btn-ghost:hover{background:var(--bg-card2)}
+.btn-danger{background:var(--accent4);color:#fff}.btn-danger:hover{opacity:.85}
+/* TABS */
+.tabs-bar{background:var(--bg-card);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs-bar::-webkit-scrollbar{display:none}
+.tab{padding:12px 20px;font-size:.82rem;font-weight:600;color:var(--text-muted);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.tab:hover:not(.active){color:var(--text);background:var(--bg-card2)}
+/* CONTENT */
+.tab-content{display:none;padding:20px 24px;max-width:1600px;margin:0 auto}
+.tab-content.active{display:block}
+/* FILTERS */
+.filters{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.filter-group{display:flex;flex-direction:column;gap:4px}
+.filter-group label{font-size:.72rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.filter-group select,.filter-group input{background:var(--bg-card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 10px;font-size:.82rem;font-family:'Outfit',sans-serif;min-width:120px}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:var(--accent)}
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;cursor:default;transition:all .25s}
+.kpi-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 8px 30px rgba(14,165,233,.15)}
+.kpi-icon{font-size:1.4rem;margin-bottom:6px}
+.kpi-label{font-size:.72rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+.kpi-value{font-size:1.8rem;font-weight:800;color:var(--text);line-height:1}
+.kpi-sub{font-size:.75rem;margin-top:4px;font-weight:600}
+.up{color:var(--accent2)}.down{color:var(--accent4)}.neutral{color:var(--text-muted)}
+/* CHARTS */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;margin-bottom:20px}
+.chart-card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:18px}
+.chart-card.wide{grid-column:1/-1}
+.chart-title{font-size:.85rem;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.chart-wrap{position:relative;height:220px}
+.chart-wrap.tall{height:280px}
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead tr{background:var(--bg-card2)}
+th{padding:10px 14px;text-align:left;font-weight:700;color:var(--text-muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;border-bottom:1px solid var(--border)}
+td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-card2)}
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--accent)}
+/* SEARCH */
+.search-bar{position:relative;margin-bottom:14px}
+.search-bar input{width:100%;background:var(--bg-card);border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 16px 10px 40px;font-size:.85rem;font-family:'Outfit',sans-serif}
+.search-bar::before{content:'🔍';position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:.9rem}
+/* PAGINATION */
+.pagination{display:flex;justify-content:center;align-items:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.page-btn{border:1px solid var(--border);background:var(--bg-card);color:var(--text);border-radius:8px;padding:5px 12px;font-size:.8rem;cursor:pointer;font-family:'Outfit',sans-serif}
+.page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.page-btn:hover:not(.active){border-color:var(--accent)}
+.page-info{color:var(--text-muted);font-size:.78rem}
+/* TOP 5 */
+.rank-list{display:flex;flex-direction:column;gap:10px}
+.rank-item{background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:14px}
+.rank-num{font-size:1.4rem;font-weight:800;min-width:32px;text-align:center}
+.rank-num.r1{color:var(--accent3)}
+.rank-num.r2{color:var(--text-muted)}
+.rank-num.r3{color:#cd7f32}
+.rank-info{flex:1}
+.rank-name{font-weight:700;font-size:.9rem}
+.rank-bar-wrap{flex:2;background:var(--border);border-radius:99px;height:8px;overflow:hidden;min-width:80px}
+.rank-bar{height:100%;border-radius:99px;background:var(--accent);transition:width .5s}
+.rank-val{font-weight:700;font-size:.9rem;min-width:70px;text-align:right}
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000;align-items:center;justify-content:center}
+.modal.open{display:flex}
+.modal-box{background:var(--bg-card);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.modal-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.modal-close{background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:.78rem;color:var(--text-muted);font-weight:600;margin-bottom:5px;text-transform:uppercase}
+.modal-field input{width:100%;background:var(--bg-card2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:8px 12px;font-size:.9rem;font-family:'Outfit',sans-serif}
+.modal-msg{font-size:.82rem;margin-top:8px;min-height:20px}
+/* BADGE */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:99px;font-size:.72rem;font-weight:700}
+.badge-c1{background:#7c3aed22;color:#a855f7;border:1px solid #a855f7}
+.badge-c2{background:#ef444422;color:#ef4444;border:1px solid #ef4444}
+.badge-c3{background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b}
+.badge-c4{background:#0ea5e922;color:#0ea5e9;border:1px solid #0ea5e9}
+.badge-c5{background:#10b98122;color:#10b981;border:1px solid #10b981}
+/* SPINNER */
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* DIVIDER */
+.section-title{font-size:.78rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin:18px 0 10px;display:flex;align-items:center;gap:8px}
+.section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+/* ALERT */
+.alert{background:var(--bg-card2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;color:var(--text-muted);font-size:.85rem;text-align:center}
+/* COMPARATIVA CHECKBOXES */
+.year-check-grid{display:flex;flex-wrap:wrap;gap:8px}
+.year-check{display:flex;align-items:center;gap:6px;background:var(--bg-card2);border:1px solid var(--border);border-radius:8px;padding:5px 10px;cursor:pointer;font-size:.82rem;transition:all .2s}
+.year-check.selected{border-color:var(--accent);color:var(--accent)}
+.year-check input{accent-color:var(--accent)}
+/* PRINT */
+@media print{
+  .header,.tabs-bar,.filters,.btn,.pagination,.modal{display:none!important}
+  .tab-content{display:block!important}
+  .tab-content:not(.active){display:none!important}
+  body{background:#fff;color:#000}
+}
+/* FOOTER */
+.footer{text-align:center;padding:16px 24px;color:var(--text-dim);font-size:.75rem;border-top:1px solid var(--border);margin-top:20px}
+.footer a{color:var(--accent);text-decoration:none}
 </style>
 </head>
 <body>
 
-<!-- MODAL PASSWORD -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <h3>🔐 Cargar JSON – Clave de acceso</h3>
-    <div class="modal-error" id="modalError">Clave incorrecta. Intente nuevamente.</div>
-    <input type="password" id="pwdInput" placeholder="Ingrese clave de acceso..." />
-    <input type="file" id="jsonFileInput" accept=".json" style="margin-bottom:14px;" />
-    <div class="modal-btns">
-      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-      <button class="btn btn-primary" onclick="verifyAndLoad()">Cargar</button>
-    </div>
-  </div>
-</div>
-
 <!-- HEADER -->
 <div class="header">
   <div class="header-left">
-    <div class="logo">🏥</div>
-    <div class="header-title">
-      <h1>Dashboard SAR – Servicio de Atención en Red</h1>
-      <p>Sistema de Urgencias · Análisis Epidemiológico y Gestión de Demanda · DEIS Chile</p>
-    </div>
+    <div class="header-title">🏥 Dashboard SAR — Servicio de Atención de Urgencias</div>
+    <div class="header-sub">Autor: Rodrigo Villalobos R. | <a href="mailto:rodrigovillalobos1978@gmail.com" style="color:var(--accent);text-decoration:none">rodrigovillalobos1978@gmail.com</a> | Última actualización: <span id="ultima-act">—</span></div>
   </div>
   <div class="header-right">
-    <div class="datetime-badge">
-      <div class="date" id="dateDisplay">—</div>
-      <div class="time" id="timeDisplay">—</div>
+    <div class="clock-box">
+      <div class="clock-time" id="clock">--:--:--</div>
+      <div class="clock-date" id="clock-date">--</div>
     </div>
-    <div class="author-badge">
-      <strong>Rodrigo Villalobos R.</strong>
-      rodrigovillalobos1978@gmail.com
+    <button class="btn btn-success" onclick="exportarExcel()">📤 Exportar Excel</button>
+    <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimir</button>
+    <button class="btn btn-warning" onclick="abrirImportar()">📥 Importar JSON</button>
+    <button class="btn btn-ghost" onclick="actualizarDatos()"><span id="refresh-ico">🔄</span> Actualizar</button>
+    <button class="btn btn-ghost" onclick="abrirAcerca()">ℹ️ Acerca</button>
+    <button class="btn btn-ghost" id="theme-btn" onclick="toggleTheme()">☀️</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tab active" onclick="switchTab('resumen',this)">📊 Resumen General</div>
+  <div class="tab" onclick="switchTab('periodo',this)">📅 Por Período</div>
+  <div class="tab" onclick="switchTab('comparativa',this)">📈 Comparativa</div>
+  <div class="tab" onclick="switchTab('top5',this)">🏆 Top Horarios</div>
+  <div class="tab" onclick="switchTab('datos',this)">🗃️ Datos Completos</div>
+</div>
+
+<!-- TAB 1: RESUMEN -->
+<div class="tab-content active" id="tab-resumen">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Año</label>
+      <select id="f1-año" onchange="renderResumen()"><option value="all">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mes</label>
+      <select id="f1-mes" onchange="renderResumen()"><option value="all">Todos</option></select>
+    </div>
+  </div>
+  <div class="kpi-grid" id="kpi-resumen"></div>
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <div class="chart-title">📅 Inscritos y Atendidos por Mes (año seleccionado)</div>
+      <div class="chart-wrap tall"><canvas id="chart-mensual"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📈 Tendencia Anual — Inscritos</div>
+      <div class="chart-wrap"><canvas id="chart-tendencia"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🔴 Distribución Triage</div>
+      <div class="chart-wrap"><canvas id="chart-triage-dona"></canvas></div>
+    </div>
+    <div class="chart-card wide">
+      <div class="chart-title">🕐 Distribución Horaria de Inscritos</div>
+      <div class="chart-wrap"><canvas id="chart-horario"></canvas></div>
     </div>
   </div>
 </div>
 
-<!-- TOOLBAR -->
-<div class="toolbar">
-  <button class="btn btn-secondary" onclick="openModal()">📂 Cargar JSON</button>
-  <button class="btn btn-secondary" onclick="resetFilters()">🔄 Limpiar filtros</button>
-  <div class="toolbar-sep"></div>
-  <button class="btn btn-green" onclick="exportExcel()">📊 Exportar Excel</button>
-  <button class="btn btn-green" onclick="exportPDF()">📄 Exportar PDF</button>
+<!-- TAB 2: POR PERÍODO -->
+<div class="tab-content" id="tab-periodo">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Año</label>
+      <select id="f2-año" onchange="renderPeriodo()"><option value="all">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mes</label>
+      <select id="f2-mes" onchange="renderPeriodo()"><option value="all">Todos</option></select>
+    </div>
+  </div>
+  <div class="kpi-grid" id="kpi-periodo"></div>
+  <div class="section-title">Detalle Mensual del Período</div>
+  <div class="table-wrap" id="tabla-periodo"></div>
 </div>
 
-<!-- FILTERS -->
-<div class="filters">
-  <div class="filter-group">
-    <label>AÑO</label>
-    <div id="yearBtns" style="display:flex;gap:5px;flex-wrap:wrap;"></div>
+<!-- TAB 3: COMPARATIVA -->
+<div class="tab-content" id="tab-comparativa">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Seleccionar Años (2–5)</label>
+      <div class="year-check-grid" id="year-checks"></div>
+    </div>
+    <div class="filter-group">
+      <label>Métrica</label>
+      <select id="f3-metrica" onchange="renderComparativa()">
+        <option value="inscritos">Inscritos</option>
+        <option value="atendidos">Atendidos</option>
+        <option value="nsp">NSP (No se presentaron)</option>
+      </select>
+    </div>
   </div>
-  <div class="toolbar-sep"></div>
-  <div class="filter-group">
-    <label>MES</label>
-    <select id="mesFilter" onchange="applyFilters()">
-      <option value="all">Todos</option>
-    </select>
+  <div class="kpi-grid" id="kpi-comparativa"></div>
+  <div class="charts-grid">
+    <div class="chart-card wide">
+      <div class="chart-title">📊 Comparativa Multi-Año por Mes</div>
+      <div class="chart-wrap tall"><canvas id="chart-comparativa"></canvas></div>
+    </div>
   </div>
+  <div class="section-title">Tabla Comparativa</div>
+  <div class="table-wrap" id="tabla-comparativa"></div>
 </div>
 
-<!-- MAIN -->
-<div class="main" id="mainContent">
-
-  <!-- ALERTS -->
-  <div class="alerts" id="alertsBox"></div>
-
-  <!-- KPIs -->
-  <div class="kpi-grid" id="kpiGrid"></div>
-
-  <!-- ROW 1: Tendencia anual + Curva horaria -->
-  <div class="chart-grid">
-    <div class="card">
-      <div class="card-title">📈 Tendencia de Atenciones Anuales <span id="trendLabel">Todos los años</span></div>
-      <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
+<!-- TAB 4: TOP HORARIOS -->
+<div class="tab-content" id="tab-top5">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Año</label>
+      <select id="f4-año" onchange="renderTop()"><option value="all">Todos</option></select>
     </div>
-    <div class="card">
-      <div class="card-title">🕐 Curva Horaria de Demanda <span id="horaLabel">Consolidado</span></div>
-      <div class="chart-wrap"><canvas id="chartHora"></canvas></div>
+    <div class="filter-group">
+      <label>Mes</label>
+      <select id="f4-mes" onchange="renderTop()"><option value="all">Todos</option></select>
     </div>
-  </div>
-
-  <!-- ROW 2: Evolución mensual + Comparador histórico -->
-  <div class="chart-grid">
-    <div class="card">
-      <div class="card-title">📅 Evolución Mensual Multi-año</div>
-      <div class="chart-wrap-lg"><canvas id="chartMensual"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🔁 Comparador: Mismo Mes, Distintos Años</div>
-      <div class="comp-selector" id="compMesSelector"></div>
-      <div class="chart-wrap"><canvas id="chartComp"></canvas></div>
+    <div class="filter-group">
+      <label>Ver</label>
+      <select id="f4-tipo" onchange="renderTop()">
+        <option value="inscritos">Por Hora (Inscritos)</option>
+        <option value="atendidos">Por Hora (Atendidos)</option>
+        <option value="motivo">Por Motivo Consulta</option>
+        <option value="triage">Por Triage</option>
+      </select>
     </div>
   </div>
-
-  <!-- ROW 3: Heatmap -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">🗓️ Heatmap – Distribución Horaria por Día del Mes <span id="heatmapLabel">Seleccione año y mes</span></div>
-    <div style="display:flex;gap:12px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
-      <select id="hmYear" onchange="renderHeatmap()" style="width:90px;"></select>
-      <select id="hmMes" onchange="renderHeatmap()" style="width:130px;"></select>
-      <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text2);">
-        <span>Bajo</span>
-        <div style="background:linear-gradient(to right,#1c2230,#1565c0,#f85149);width:100px;height:10px;border-radius:4px;"></div>
-        <span>Alto</span>
-      </div>
-    </div>
-    <div class="heatmap-container">
-      <div id="heatmapBox"></div>
-    </div>
-  </div>
-
-  <!-- ROW 4: Proyección invierno -->
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">❄️ Proyección Demanda – Próximos 6 Meses <span>Modelo histórico</span></div>
-    <div class="projection-grid" id="projGrid"></div>
-  </div>
-
-  <!-- ROW 5: Análisis por día de semana + Distribución variación -->
-  <div class="chart-grid-2">
-    <div class="card">
-      <div class="card-title">📊 Variación Interanual por Mes</div>
-      <div class="chart-wrap-lg"><canvas id="chartVariacion"></canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title">🧠 Insights y Recomendaciones de Gestión</div>
-      <div id="insightsBox" style="overflow-y:auto;max-height:300px;"></div>
-    </div>
-  </div>
-
+  <div id="top5-contenido"></div>
 </div>
 
-<!-- FOOTER -->
+<!-- TAB 5: DATOS COMPLETOS -->
+<div class="tab-content" id="tab-datos">
+  <div class="filters">
+    <div class="filter-group">
+      <label>Año</label>
+      <select id="f5-año" onchange="renderDatos()"><option value="all">Todos</option></select>
+    </div>
+    <div class="filter-group">
+      <label>Mes</label>
+      <select id="f5-mes" onchange="renderDatos()"><option value="all">Todos</option></select>
+    </div>
+  </div>
+  <div class="search-bar"><input id="busqueda" placeholder="Buscar en todos los campos..." oninput="renderDatos()"></div>
+  <div id="datos-info" class="page-info" style="margin-bottom:8px"></div>
+  <div class="table-wrap" id="tabla-datos"></div>
+  <div class="pagination" id="paginacion"></div>
+</div>
+
 <div class="footer">
-  Dashboard SAR · Servicio de Atención en Red · Urgencias Hospitalarias Chile &nbsp;|&nbsp;
-  Autor: <strong>Rodrigo Villalobos R.</strong> &nbsp;|&nbsp;
-  <a href="mailto:rodrigovillalobos1978@gmail.com">rodrigovillalobos1978@gmail.com</a> &nbsp;|&nbsp;
-  Datos: 2019–2026
+  🏥 Dashboard SAR | Autor: Rodrigo Villalobos R. | <a href="mailto:rodrigovillalobos1978@gmail.com">rodrigovillalobos1978@gmail.com</a> | Datos 2019–2026
+</div>
+
+<!-- MODALES -->
+<div class="modal" id="modal-importar">
+  <div class="modal-box">
+    <div class="modal-title">📥 Importar JSON Local <button class="modal-close" onclick="cerrarModal('modal-importar')">✕</button></div>
+    <div class="modal-field"><label>Contraseña</label><input type="password" id="import-pass" placeholder="Ingrese clave..."></div>
+    <div class="modal-field"><label>Archivo JSON</label><input type="file" id="import-file" accept=".json" style="padding:6px"></div>
+    <div class="modal-msg" id="import-msg"></div>
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-warning" onclick="importarJSON()">Importar</button>
+      <button class="btn btn-ghost" onclick="cerrarModal('modal-importar')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal-acerca">
+  <div class="modal-box">
+    <div class="modal-title">ℹ️ Acerca del Dashboard <button class="modal-close" onclick="cerrarModal('modal-acerca')">✕</button></div>
+    <div id="acerca-content" style="font-size:.87rem;line-height:1.7;color:var(--text-muted)"></div>
+    <button class="btn btn-ghost" style="margin-top:16px;width:100%" onclick="cerrarModal('modal-acerca')">Cerrar</button>
+  </div>
 </div>
 
 <script>
-// ===== DATA =====
-let RAW_DATA = [{"anio":2019,"mes":"ENERO","mes_num":1,"total_inscritos":6497,"por_hora":{"8":37,"9":62,"10":85,"11":210,"12":231,"13":185,"14":205,"15":229,"16":233,"17":454,"18":577,"19":572,"20":579,"21":564,"22":421,"23":375,"0":257,"1":231,"2":164,"3":109,"4":45,"5":34,"6":40,"7":49},"por_dia":{"1":215,"2":245,"3":233,"4":212,"5":264,"6":243,"7":236,"8":167,"9":184,"10":199,"11":189,"12":246,"13":244,"14":216,"15":178,"16":188,"17":194,"18":135,"19":223,"20":207,"21":227,"22":201,"23":200,"24":197,"25":198,"26":254,"27":207,"28":235,"29":168,"30":224,"31":168}},{"anio":2019,"mes":"FEBRERO","mes_num":2,"total_inscritos":5688,"por_hora":{"8":40,"9":66,"10":98,"11":215,"12":213,"13":143,"14":164,"15":178,"16":215,"17":445,"18":507,"19":522,"20":523,"21":500,"22":411,"23":351,"0":203,"1":178,"2":114,"3":67,"4":50,"5":48,"6":26,"7":38},"por_dia":{"1":170,"2":226,"3":217,"4":225,"5":206,"6":196,"7":182,"8":167,"9":255,"10":224,"11":228,"12":163,"13":187,"14":188,"15":167,"16":239,"17":238,"18":215,"19":199,"20":205,"21":193,"22":172,"23":228,"24":207,"25":223,"26":205,"27":182,"28":181}},{"anio":2019,"mes":"MARZO","mes_num":3,"total_inscritos":6448,"por_hora":{"8":20,"9":62,"10":93,"11":211,"12":266,"13":144,"14":216,"15":257,"16":211,"17":374,"18":556,"19":592,"20":581,"21":590,"22":427,"23":348,"0":262,"1":176,"2":116,"3":65,"4":54,"5":52,"6":32,"7":39},"por_dia":{"1":188,"2":224,"3":197,"4":186,"5":185,"6":168,"7":174,"8":167,"9":224,"10":198,"11":197,"12":191,"13":192,"14":166,"15":182,"16":269,"17":246,"18":227,"19":221,"20":202,"21":200,"22":208,"23":249,"24":247,"25":274,"26":207,"27":190,"28":176,"29":208,"30":248,"31":237}},{"anio":2019,"mes":"ABRIL","mes_num":4,"total_inscritos":5662,"por_hora":{"8":37,"9":38,"10":97,"11":167,"12":136,"13":110,"14":144,"15":165,"16":150,"17":330,"18":569,"19":648,"20":610,"21":528,"22":448,"23":332,"0":213,"1":140,"2":88,"3":57,"4":34,"5":26,"6":23,"7":22},"por_dia":{"1":221,"2":209,"3":189,"4":164,"5":161,"6":233,"7":247,"8":178,"9":158,"10":171,"11":143,"12":150,"13":228,"14":216,"15":203,"16":169,"17":174,"18":160,"19":194,"20":229,"21":240,"22":177,"23":161,"24":161,"25":144,"26":172,"27":238,"28":233,"29":177,"30":162}},{"anio":2019,"mes":"MAYO","mes_num":5,"total_inscritos":6212,"por_hora":{"8":42,"9":62,"10":126,"11":147,"12":155,"13":114,"14":147,"15":164,"16":179,"17":357,"18":646,"19":652,"20":656,"21":589,"22":405,"23":341,"0":243,"1":183,"2":108,"3":59,"4":35,"5":30,"6":35,"7":41},"por_dia":{"1":209,"2":124,"3":133,"4":252,"5":232,"6":222,"7":175,"8":149,"9":142,"10":140,"11":235,"12":222,"13":236,"14":203,"15":186,"16":185,"17":175,"18":254,"19":268,"20":186,"21":270,"22":211,"23":184,"24":199,"25":296,"26":256,"27":221,"28":203,"29":161,"30":179,"31":104}},{"anio":2019,"mes":"JUNIO","mes_num":6,"total_inscritos":6358,"por_hora":{"8":31,"9":62,"10":114,"11":155,"12":119,"13":112,"14":119,"15":147,"16":157,"17":329,"18":650,"19":699,"20":692,"21":597,"22":495,"23":380,"0":234,"1":183,"2":121,"3":73,"4":33,"5":37,"6":15,"7":31},"por_dia":{"1":298,"2":299,"3":223,"4":185,"5":206,"6":189,"7":175,"8":293,"9":289,"10":245,"11":211,"12":185,"13":194,"14":187,"15":254,"16":232,"17":197,"18":199,"19":196,"20":176,"21":162,"22":271,"23":294,"24":159,"25":192,"26":150,"27":129,"28":77,"29":225,"30":266,"31":0}},{"anio":2019,"mes":"JULIO","mes_num":7,"total_inscritos":5478,"por_hora":{"8":12,"9":61,"10":116,"11":114,"12":117,"13":106,"14":111,"15":148,"16":161,"17":365,"18":700,"19":783,"20":759,"21":516,"22":361,"23":261,"0":145,"1":118,"2":88,"3":48,"4":38,"5":29,"6":26,"7":23},"por_dia":{"1":175,"2":128,"3":164,"4":167,"5":165,"6":247,"7":241,"8":205,"9":154,"10":133,"11":155,"12":159,"13":243,"14":232,"15":187,"16":204,"17":150,"18":155,"19":150,"20":218,"21":215,"22":142,"23":149,"24":155,"25":135,"26":130,"27":224,"28":201,"29":178,"30":167,"31":150}},{"anio":2019,"mes":"AGOSTO","mes_num":8,"total_inscritos":6354,"por_hora":{"8":37,"9":78,"10":117,"11":164,"12":142,"13":137,"14":138,"15":142,"16":176,"17":396,"18":705,"19":809,"20":760,"21":638,"22":420,"23":318,"0":235,"1":166,"2":121,"3":53,"4":36,"5":19,"6":18,"7":46},"por_dia":{"1":152,"2":144,"3":229,"4":174,"5":182,"6":150,"7":150,"8":128,"9":152,"10":229,"11":252,"12":213,"13":205,"14":190,"15":230,"16":170,"17":255,"18":244,"19":204,"20":290,"21":234,"22":198,"23":199,"24":292,"25":240,"26":217,"27":208,"28":222,"29":168,"30":183,"31":250}},{"anio":2019,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":6735,"por_hora":{"8":32,"9":73,"10":148,"11":207,"12":181,"13":151,"14":167,"15":189,"16":196,"17":360,"18":644,"19":701,"20":708,"21":665,"22":495,"23":396,"0":249,"1":170,"2":171,"3":117,"4":50,"5":30,"6":29,"7":21},"por_dia":{"1":251,"2":225,"3":186,"4":222,"5":169,"6":175,"7":277,"8":272,"9":216,"10":202,"11":189,"12":171,"13":191,"14":259,"15":245,"16":211,"17":193,"18":233,"19":247,"20":288,"21":292,"22":276,"23":250,"24":219,"25":181,"26":194,"27":220,"28":259,"29":230,"30":192,"31":0}},{"anio":2019,"mes":"OCTUBRE","mes_num":10,"total_inscritos":5836,"por_hora":{"8":30,"9":57,"10":99,"11":117,"12":116,"13":116,"14":107,"15":121,"16":127,"17":286,"18":625,"19":737,"20":687,"21":570,"22":474,"23":301,"0":259,"1":173,"2":134,"3":93,"4":36,"5":24,"6":17,"7":25},"por_dia":{"1":169,"2":189,"3":157,"4":174,"5":240,"6":245,"7":222,"8":198,"9":216,"10":202,"11":186,"12":254,"13":298,"14":208,"15":183,"16":201,"17":208,"18":186,"19":241,"20":202,"21":105,"22":135,"23":111,"24":133,"25":146,"26":194,"27":215,"28":126,"29":151,"30":137,"31":204}},{"anio":2019,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":5266,"por_hora":{"8":34,"9":68,"10":88,"11":109,"12":88,"13":94,"14":119,"15":126,"16":137,"17":288,"18":541,"19":599,"20":545,"21":494,"22":395,"23":323,"0":250,"1":169,"2":132,"3":100,"4":38,"5":28,"6":31,"7":20},"por_dia":{"1":216,"2":209,"3":201,"4":177,"5":167,"6":153,"7":113,"8":148,"9":233,"10":228,"11":184,"12":111,"13":141,"14":156,"15":160,"16":197,"17":212,"18":176,"19":155,"20":144,"21":150,"22":141,"23":212,"24":221,"25":172,"26":141,"27":165,"28":198,"29":153,"30":232,"31":0}},{"anio":2019,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":5179,"por_hora":{"8":24,"9":56,"10":93,"11":105,"12":103,"13":104,"14":124,"15":129,"16":140,"17":300,"18":485,"19":527,"20":501,"21":475,"22":436,"23":357,"0":255,"1":212,"2":141,"3":84,"4":49,"5":30,"6":24,"7":14},"por_dia":{"1":200,"2":191,"3":160,"4":156,"5":156,"6":165,"7":210,"8":206,"9":177,"10":163,"11":114,"12":143,"13":139,"14":192,"15":181,"16":188,"17":139,"18":162,"19":142,"20":131,"21":207,"22":173,"23":134,"24":96,"25":173,"26":176,"27":166,"28":244,"29":219,"30":180,"31":96}},{"anio":2020,"mes":"ENERO","mes_num":1,"total_inscritos":5388,"por_hora":{"8":31,"9":52,"10":101,"11":96,"12":102,"13":87,"14":83,"15":118,"16":100,"17":400,"18":509,"19":536,"20":543,"21":508,"22":461,"23":334,"0":234,"1":200,"2":173,"3":83,"4":61,"5":39,"6":33,"7":9},"por_dia":{"1":163,"2":169,"3":175,"4":225,"5":228,"6":188,"7":165,"8":155,"9":141,"10":140,"11":206,"12":199,"13":175,"14":151,"15":149,"16":157,"17":158,"18":195,"19":224,"20":158,"21":163,"22":156,"23":161,"24":152,"25":219,"26":231,"27":167,"28":142,"29":159,"30":147,"31":170}},{"anio":2020,"mes":"FEBRERO","mes_num":2,"total_inscritos":5213,"por_hora":{"8":39,"9":61,"10":98,"11":122,"12":94,"13":87,"14":103,"15":95,"16":120,"17":258,"18":503,"19":573,"20":529,"21":484,"22":440,"23":364,"0":231,"1":181,"2":136,"3":101,"4":45,"5":42,"6":39,"7":12},"por_dia":{"1":227,"2":199,"3":175,"4":145,"5":149,"6":142,"7":177,"8":197,"9":210,"10":178,"11":161,"12":141,"13":154,"14":128,"15":231,"16":239,"17":182,"18":185,"19":180,"20":160,"21":167,"22":224,"23":215,"24":165,"25":159,"26":166,"27":183,"28":138,"29":236,"30":0,"31":0}},{"anio":2020,"mes":"MARZO","mes_num":3,"total_inscritos":4021,"por_hora":{"8":25,"9":43,"10":82,"11":87,"12":97,"13":101,"14":87,"15":79,"16":101,"17":209,"18":441,"19":443,"20":437,"21":396,"22":313,"23":212,"0":181,"1":122,"2":90,"3":60,"4":31,"5":23,"6":14,"7":18},"por_dia":{"1":188,"2":165,"3":193,"4":156,"5":165,"6":144,"7":216,"8":206,"9":180,"10":190,"11":194,"12":171,"13":164,"14":236,"15":241,"16":154,"17":135,"18":62,"19":69,"20":74,"21":75,"22":84,"23":41,"24":38,"25":51,"26":62,"27":58,"28":87,"29":104,"30":55,"31":63}},{"anio":2020,"mes":"ABRIL","mes_num":4,"total_inscritos":1992,"por_hora":{"8":25,"9":102,"10":97,"11":110,"12":125,"13":101,"14":106,"15":118,"16":135,"17":132,"18":167,"19":121,"20":100,"21":104,"22":81,"23":52,"0":43,"1":48,"2":45,"3":22,"4":20,"5":18,"6":11,"7":12},"por_dia":{"1":79,"2":75,"3":78,"4":65,"5":75,"6":94,"7":73,"8":63,"9":52,"10":44,"11":65,"12":45,"13":84,"14":62,"15":55,"16":62,"17":79,"18":78,"19":80,"20":74,"21":66,"22":59,"23":82,"24":68,"25":69,"26":79,"27":47,"28":0,"29":54,"30":86,"31":0}},{"anio":2020,"mes":"MAYO","mes_num":5,"total_inscritos":2659,"por_hora":{"8":40,"9":132,"10":131,"11":144,"12":185,"13":159,"14":121,"15":157,"16":196,"17":190,"18":230,"19":203,"20":136,"21":125,"22":89,"23":79,"0":65,"1":41,"2":30,"3":19,"4":20,"5":15,"6":15,"7":15},"por_dia":{"1":73,"2":79,"3":70,"4":94,"5":68,"6":61,"7":73,"8":91,"9":60,"10":69,"11":111,"12":104,"13":112,"14":130,"15":102,"16":75,"17":69,"18":85,"19":71,"20":96,"21":72,"22":112,"23":82,"24":86,"25":117,"26":87,"27":92,"28":77,"29":84,"30":84,"31":73}},{"anio":2020,"mes":"JUNIO","mes_num":6,"total_inscritos":2845,"por_hora":{"8":50,"9":129,"10":136,"11":180,"12":227,"13":163,"14":149,"15":187,"16":210,"17":201,"18":233,"19":245,"20":125,"21":116,"22":91,"23":63,"0":56,"1":37,"2":31,"3":20,"4":17,"5":6,"6":7,"7":21},"por_dia":{"1":91,"2":74,"3":102,"4":95,"5":105,"6":61,"7":81,"8":117,"9":115,"10":129,"11":102,"12":133,"13":105,"14":78,"15":101,"16":74,"17":86,"18":65,"19":98,"20":70,"21":75,"22":113,"23":105,"24":96,"25":131,"26":109,"27":86,"28":66,"29":64,"30":118,"31":0}},{"anio":2020,"mes":"JULIO","mes_num":7,"total_inscritos":3279,"por_hora":{"8":64,"9":176,"10":178,"11":181,"12":193,"13":187,"14":148,"15":237,"16":226,"17":242,"18":326,"19":253,"20":177,"21":137,"22":99,"23":61,"0":42,"1":40,"2":27,"3":13,"4":13,"5":16,"6":17,"7":17},"por_dia":{"1":89,"2":101,"3":91,"4":101,"5":93,"6":146,"7":117,"8":121,"9":86,"10":138,"11":82,"12":82,"13":111,"14":121,"15":125,"16":85,"17":121,"18":103,"19":89,"20":133,"21":121,"22":129,"23":115,"24":115,"25":90,"26":69,"27":142,"28":109,"29":83,"30":90,"31":81}},{"anio":2020,"mes":"AGOSTO","mes_num":8,"total_inscritos":3351,"por_hora":{"8":82,"9":165,"10":186,"11":214,"12":224,"13":179,"14":174,"15":222,"16":242,"17":231,"18":283,"19":226,"20":187,"21":169,"22":113,"23":72,"0":47,"1":34,"2":28,"3":20,"4":25,"5":11,"6":10,"7":26},"por_dia":{"1":83,"2":79,"3":124,"4":142,"5":106,"6":111,"7":111,"8":78,"9":86,"10":112,"11":109,"12":124,"13":109,"14":102,"15":77,"16":88,"17":165,"18":122,"19":114,"20":98,"21":134,"22":107,"23":100,"24":159,"25":99,"26":90,"27":109,"28":110,"29":90,"30":99,"31":114}},{"anio":2020,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":3235,"por_hora":{"8":45,"9":158,"10":171,"11":160,"12":212,"13":187,"14":192,"15":222,"16":239,"17":182,"18":244,"19":235,"20":194,"21":146,"22":148,"23":86,"0":61,"1":56,"2":44,"3":26,"4":16,"5":8,"6":17,"7":22},"por_dia":{"1":111,"2":80,"3":97,"4":116,"5":109,"6":88,"7":116,"8":104,"9":118,"10":110,"11":144,"12":111,"13":83,"14":118,"15":122,"16":91,"17":81,"18":72,"19":92,"20":99,"21":151,"22":120,"23":152,"24":154,"25":69,"26":104,"27":98,"28":126,"29":108,"30":91,"31":0}},{"anio":2020,"mes":"OCTUBRE","mes_num":10,"total_inscritos":3797,"por_hora":{"8":53,"9":158,"10":180,"11":200,"12":223,"13":187,"14":201,"15":251,"16":243,"17":179,"18":323,"19":276,"20":270,"21":220,"22":241,"23":151,"0":82,"1":57,"2":41,"3":20,"4":14,"5":18,"6":11,"7":31},"por_dia":{"1":108,"2":121,"3":109,"4":108,"5":132,"6":130,"7":108,"8":107,"9":117,"10":112,"11":130,"12":108,"13":113,"14":128,"15":130,"16":122,"17":103,"18":117,"19":160,"20":117,"21":123,"22":156,"23":152,"24":99,"25":120,"26":146,"27":116,"28":122,"29":141,"30":121,"31":121}},{"anio":2020,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":4118,"por_hora":{"8":29,"9":87,"10":123,"11":144,"12":143,"13":146,"14":243,"15":296,"16":271,"17":239,"18":387,"19":323,"20":296,"21":307,"22":254,"23":187,"0":163,"1":99,"2":38,"3":24,"4":17,"5":15,"6":25,"7":20},"por_dia":{"1":122,"2":126,"3":118,"4":128,"5":135,"6":126,"7":129,"8":109,"9":156,"10":133,"11":166,"12":152,"13":119,"14":125,"15":133,"16":146,"17":120,"18":113,"19":127,"20":137,"21":124,"22":151,"23":175,"24":151,"25":142,"26":168,"27":134,"28":134,"29":133,"30":186,"31":0}},{"anio":2020,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":4099,"por_hora":{"8":35,"9":89,"10":119,"11":121,"12":149,"13":138,"14":235,"15":304,"16":308,"17":273,"18":324,"19":355,"20":268,"21":274,"22":257,"23":203,"0":150,"1":106,"2":51,"3":42,"4":16,"5":20,"6":16,"7":23},"por_dia":{"1":140,"2":149,"3":123,"4":128,"5":120,"6":117,"7":135,"8":144,"9":169,"10":120,"11":123,"12":123,"13":119,"14":126,"15":130,"16":160,"17":132,"18":115,"19":136,"20":99,"21":143,"22":135,"23":135,"24":82,"25":132,"26":148,"27":168,"28":164,"29":152,"30":135,"31":97}},{"anio":2021,"mes":"ENERO","mes_num":1,"total_inscritos":4381,"por_hora":{"8":55,"9":111,"10":149,"11":173,"12":189,"13":159,"14":191,"15":181,"16":227,"17":295,"18":368,"19":422,"20":382,"21":293,"22":275,"23":203,"0":175,"1":94,"2":47,"3":22,"4":21,"5":20,"6":29,"7":23},"por_dia":{"1":123,"2":143,"3":148,"4":140,"5":133,"6":119,"7":139,"8":122,"9":125,"10":149,"11":145,"12":111,"13":148,"14":114,"15":111,"16":128,"17":159,"18":170,"19":153,"20":135,"21":137,"22":145,"23":133,"24":131,"25":173,"26":196,"27":164,"28":154,"29":132,"30":164,"31":137}},{"anio":2021,"mes":"FEBRERO","mes_num":2,"total_inscritos":4349,"por_hora":{"8":66,"9":142,"10":179,"11":182,"12":221,"13":181,"14":179,"15":227,"16":254,"17":238,"18":367,"19":414,"20":361,"21":321,"22":279,"23":184,"0":121,"1":71,"2":49,"3":30,"4":27,"5":22,"6":18,"7":18},"por_dia":{"1":191,"2":173,"3":152,"4":142,"5":143,"6":148,"7":161,"8":215,"9":173,"10":178,"11":166,"12":176,"13":152,"14":135,"15":173,"16":170,"17":148,"18":174,"19":143,"20":149,"21":130,"22":145,"23":147,"24":132,"25":132,"26":130,"27":144,"28":127,"29":0,"30":0,"31":0}},{"anio":2021,"mes":"MARZO","mes_num":3,"total_inscritos":4712,"por_hora":{"8":34,"9":125,"10":135,"11":164,"12":190,"13":163,"14":155,"15":189,"16":212,"17":274,"18":446,"19":512,"20":468,"21":403,"22":335,"23":215,"0":142,"1":112,"2":50,"3":38,"4":21,"5":28,"6":12,"7":24},"por_dia":{"1":177,"2":126,"3":157,"4":142,"5":126,"6":156,"7":165,"8":155,"9":154,"10":155,"11":156,"12":149,"13":172,"14":163,"15":148,"16":159,"17":148,"18":128,"19":124,"20":173,"21":147,"22":199,"23":162,"24":143,"25":160,"26":170,"27":115,"28":165,"29":171,"30":122,"31":125}},{"anio":2021,"mes":"ABRIL","mes_num":4,"total_inscritos":4111,"por_hora":{"8":58,"9":118,"10":157,"11":159,"12":181,"13":159,"14":200,"15":205,"16":200,"17":248,"18":426,"19":471,"20":405,"21":285,"22":192,"23":111,"0":91,"1":65,"2":35,"3":29,"4":19,"5":24,"6":19,"7":27},"por_dia":{"1":126,"2":159,"3":137,"4":132,"5":156,"6":131,"7":137,"8":126,"9":133,"10":153,"11":143,"12":155,"13":169,"14":154,"15":146,"16":153,"17":129,"18":131,"19":168,"20":129,"21":101,"22":112,"23":134,"24":127,"25":144,"26":151,"27":114,"28":135,"29":138,"30":88,"31":0}},{"anio":2021,"mes":"MAYO","mes_num":5,"total_inscritos":4600,"por_hora":{"8":62,"9":159,"10":161,"11":188,"12":210,"13":200,"14":218,"15":215,"16":252,"17":275,"18":458,"19":494,"20":432,"21":276,"22":273,"23":134,"0":90,"1":91,"2":54,"3":23,"4":40,"5":15,"6":22,"7":28},"por_dia":{"1":117,"2":111,"3":135,"4":140,"5":118,"6":139,"7":106,"8":140,"9":124,"10":139,"11":123,"12":128,"13":150,"14":131,"15":140,"16":157,"17":189,"18":141,"19":138,"20":158,"21":151,"22":165,"23":191,"24":223,"25":166,"26":186,"27":151,"28":154,"29":178,"30":152,"31":159}},{"anio":2021,"mes":"JUNIO","mes_num":6,"total_inscritos":4530,"por_hora":{"8":56,"9":167,"10":193,"11":196,"12":214,"13":185,"14":169,"15":242,"16":246,"17":267,"18":513,"19":513,"20":409,"21":322,"22":203,"23":138,"0":95,"1":71,"2":32,"3":28,"4":27,"5":16,"6":29,"7":24},"por_dia":{"1":152,"2":144,"3":172,"4":177,"5":149,"6":153,"7":179,"8":149,"9":143,"10":150,"11":142,"12":178,"13":157,"14":178,"15":118,"16":152,"17":137,"18":127,"19":152,"20":132,"21":159,"22":187,"23":157,"24":130,"25":149,"26":147,"27":125,"28":146,"29":162,"30":127,"31":0}},{"anio":2021,"mes":"JULIO","mes_num":7,"total_inscritos":4477,"por_hora":{"8":46,"9":116,"10":149,"11":178,"12":233,"13":173,"14":170,"15":179,"16":192,"17":313,"18":479,"19":501,"20":434,"21":327,"22":296,"23":166,"0":129,"1":72,"2":54,"3":24,"4":22,"5":24,"6":15,"7":20},"por_dia":{"1":129,"2":110,"3":178,"4":122,"5":139,"6":146,"7":147,"8":126,"9":98,"10":119,"11":121,"12":127,"13":117,"14":121,"15":134,"16":161,"17":185,"18":172,"19":177,"20":165,"21":154,"22":150,"23":160,"24":145,"25":152,"26":166,"27":171,"28":156,"29":147,"30":122,"31":160}},{"anio":2021,"mes":"AGOSTO","mes_num":8,"total_inscritos":4539,"por_hora":{"8":52,"9":127,"10":162,"11":168,"12":157,"13":153,"14":153,"15":195,"16":187,"17":281,"18":567,"19":566,"20":446,"21":324,"22":304,"23":157,"0":97,"1":79,"2":37,"3":27,"4":28,"5":23,"6":21,"7":10},"por_dia":{"1":177,"2":165,"3":173,"4":131,"5":123,"6":125,"7":142,"8":121,"9":192,"10":146,"11":153,"12":143,"13":140,"14":142,"15":150,"16":153,"17":141,"18":147,"19":128,"20":162,"21":134,"22":145,"23":172,"24":123,"25":145,"26":125,"27":117,"28":151,"29":133,"30":180,"31":160}},{"anio":2021,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":4026,"por_hora":{"8":46,"9":94,"10":128,"11":135,"12":120,"13":121,"14":109,"15":126,"16":171,"17":197,"18":475,"19":500,"20":425,"21":360,"22":280,"23":166,"0":134,"1":86,"2":61,"3":42,"4":25,"5":15,"6":15,"7":9},"por_dia":{"1":140,"2":130,"3":130,"4":142,"5":122,"6":132,"7":134,"8":147,"9":96,"10":106,"11":78,"12":111,"13":153,"14":112,"15":128,"16":114,"17":151,"18":111,"19":124,"20":177,"21":166,"22":133,"23":144,"24":134,"25":179,"26":165,"27":171,"28":151,"29":118,"30":127,"31":0}},{"anio":2021,"mes":"OCTUBRE","mes_num":10,"total_inscritos":4760,"por_hora":{"8":44,"9":115,"10":153,"11":155,"12":149,"13":132,"14":156,"15":168,"16":182,"17":299,"18":532,"19":545,"20":438,"21":406,"22":336,"23":223,"0":197,"1":115,"2":76,"3":34,"4":41,"5":18,"6":18,"7":17},"por_dia":{"1":118,"2":112,"3":155,"4":159,"5":157,"6":152,"7":134,"8":130,"9":135,"10":152,"11":176,"12":180,"13":136,"14":146,"15":122,"16":180,"17":181,"18":164,"19":152,"20":174,"21":158,"22":147,"23":170,"24":173,"25":175,"26":139,"27":155,"28":159,"29":158,"30":157,"31":154}},{"anio":2021,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":5101,"por_hora":{"8":45,"9":125,"10":154,"11":137,"12":161,"13":152,"14":140,"15":178,"16":210,"17":246,"18":504,"19":547,"20":488,"21":479,"22":402,"23":284,"0":194,"1":138,"2":73,"3":37,"4":32,"5":14,"6":14,"7":10},"por_dia":{"1":184,"2":231,"3":140,"4":142,"5":143,"6":0,"7":192,"8":196,"9":162,"10":139,"11":159,"12":143,"13":178,"14":165,"15":182,"16":174,"17":167,"18":161,"19":160,"20":175,"21":204,"22":189,"23":197,"24":164,"25":185,"26":164,"27":198,"28":204,"29":225,"30":178,"31":0}},{"anio":2021,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":1329,"por_hora":{"8":12,"9":42,"10":41,"11":42,"12":51,"13":43,"14":38,"15":48,"16":51,"17":82,"18":145,"19":141,"20":118,"21":113,"22":103,"23":88,"0":48,"1":32,"2":20,"3":16,"4":8,"5":5,"6":6,"7":4},"por_dia":{"1":164,"2":153,"3":153,"4":168,"5":152,"6":182,"7":172,"8":185,"9":0,"10":0,"11":0,"12":0,"13":0,"14":0,"15":0,"16":0,"17":0,"18":0,"19":0,"20":0,"21":0,"22":0,"23":0,"24":0,"25":0,"26":0,"27":0,"28":0,"29":0,"30":0,"31":0}},{"anio":2022,"mes":"ENERO","mes_num":1,"total_inscritos":8301,"por_hora":{"8":104,"9":234,"10":301,"11":348,"12":334,"13":202,"14":345,"15":353,"16":381,"17":392,"18":680,"19":717,"20":623,"21":591,"22":570,"23":344,"0":314,"1":268,"2":158,"3":110,"4":62,"5":31,"6":24,"7":68},"por_dia":{"1":178,"2":193,"3":235,"4":198,"5":215,"6":177,"7":177,"8":220,"9":231,"10":246,"11":222,"12":212,"13":182,"14":218,"15":227,"16":252,"17":272,"18":266,"19":239,"20":276,"21":312,"22":330,"23":309,"24":515,"25":366,"26":322,"27":291,"28":336,"29":325,"30":352,"31":407}},{"anio":2022,"mes":"FEBRERO","mes_num":2,"total_inscritos":7712,"por_hora":{"8":158,"9":245,"10":335,"11":348,"12":399,"13":163,"14":350,"15":385,"16":389,"17":363,"18":519,"19":615,"20":545,"21":487,"22":479,"23":302,"0":256,"1":209,"2":155,"3":120,"4":64,"5":38,"6":30,"7":95},"por_dia":{"1":325,"2":316,"3":340,"4":284,"5":305,"6":288,"7":395,"8":347,"9":351,"10":258,"11":278,"12":297,"13":265,"14":315,"15":287,"16":280,"17":271,"18":250,"19":240,"20":233,"21":265,"22":249,"23":214,"24":218,"25":219,"26":212,"27":175,"28":235}},{"anio":2022,"mes":"MARZO","mes_num":3,"total_inscritos":6701,"por_hora":{"8":117,"9":203,"10":266,"11":318,"12":314,"13":184,"14":268,"15":345,"16":343,"17":394,"18":530,"19":567,"20":520,"21":495,"22":430,"23":329,"0":211,"1":114,"2":81,"3":42,"4":33,"5":21,"6":20,"7":45},"por_dia":{"1":193,"2":207,"3":197,"4":163,"5":168,"6":187,"7":181,"8":163,"9":194,"10":185,"11":187,"12":233,"13":266,"14":312,"15":265,"16":250,"17":231,"18":191,"19":220,"20":252,"21":320,"22":253,"23":206,"24":209,"25":187,"26":202,"27":227,"28":224,"29":214,"30":196,"31":218}},{"anio":2022,"mes":"ABRIL","mes_num":4,"total_inscritos":5972,"por_hora":{"8":134,"9":243,"10":280,"11":276,"12":317,"13":178,"14":230,"15":317,"16":313,"17":304,"18":506,"19":568,"20":441,"21":416,"22":333,"23":224,"0":134,"1":100,"2":58,"3":33,"4":28,"5":23,"6":18,"7":57},"por_dia":{"1":234,"2":192,"3":173,"4":237,"5":232,"6":251,"7":187,"8":176,"9":192,"10":186,"11":250,"12":186,"13":214,"14":193,"15":171,"16":175,"17":191,"18":285,"19":234,"20":191,"21":178,"22":192,"23":182,"24":165,"25":230,"26":154,"27":189,"28":191,"29":172,"30":169,"31":0}},{"anio":2022,"mes":"MAYO","mes_num":5,"total_inscritos":7578,"por_hora":{"8":133,"9":258,"10":355,"11":359,"12":397,"13":196,"14":379,"15":438,"16":446,"17":424,"18":638,"19":646,"20":589,"21":530,"22":410,"23":296,"0":177,"1":106,"2":67,"3":35,"4":35,"5":27,"6":21,"7":74},"por_dia":{"1":205,"2":297,"3":253,"4":259,"5":227,"6":176,"7":198,"8":181,"9":288,"10":255,"11":223,"12":217,"13":232,"14":215,"15":228,"16":314,"17":285,"18":265,"19":220,"20":247,"21":228,"22":174,"23":312,"24":304,"25":280,"26":255,"27":212,"28":231,"29":225,"30":305,"31":267}},{"anio":2022,"mes":"JUNIO","mes_num":6,"total_inscritos":8345,"por_hora":{"8":147,"9":292,"10":386,"11":404,"12":442,"13":280,"14":411,"15":474,"16":452,"17":461,"18":583,"19":629,"20":581,"21":522,"22":415,"23":289,"0":233,"1":132,"2":92,"3":43,"4":30,"5":39,"6":29,"7":79},"por_dia":{"1":177,"2":231,"3":210,"4":206,"5":296,"6":396,"7":342,"8":364,"9":286,"10":292,"11":271,"12":256,"13":370,"14":311,"15":262,"16":267,"17":245,"18":200,"19":242,"20":290,"21":342,"22":323,"23":270,"24":283,"25":239,"26":213,"27":325,"28":311,"29":261,"30":264,"31":0}},{"anio":2022,"mes":"JULIO","mes_num":7,"total_inscritos":7185,"por_hora":{"8":133,"9":251,"10":307,"11":348,"12":409,"13":279,"14":394,"15":452,"16":452,"17":400,"18":564,"19":618,"20":525,"21":463,"22":339,"23":273,"0":179,"1":131,"2":64,"3":51,"4":37,"5":27,"6":34,"7":67},"por_dia":{"1":260,"2":220,"3":250,"4":299,"5":242,"6":232,"7":240,"8":207,"9":178,"10":216,"11":256,"12":210,"13":190,"14":226,"15":198,"16":182,"17":154,"18":263,"19":247,"20":248,"21":212,"22":230,"23":216,"24":225,"25":288,"26":259,"27":285,"28":240,"29":244,"30":227,"31":241}},{"anio":2022,"mes":"AGOSTO","mes_num":8,"total_inscritos":8972,"por_hora":{"8":155,"9":362,"10":411,"11":436,"12":460,"13":346,"14":415,"15":549,"16":533,"17":456,"18":610,"19":743,"20":671,"21":605,"22":517,"23":363,"0":228,"1":132,"2":81,"3":42,"4":29,"5":25,"6":20,"7":89},"por_dia":{"1":322,"2":289,"3":256,"4":286,"5":248,"6":190,"7":215,"8":325,"9":326,"10":328,"11":313,"12":266,"13":268,"14":260,"15":325,"16":384,"17":326,"18":299,"19":273,"20":251,"21":261,"22":355,"23":290,"24":299,"25":270,"26":243,"27":221,"28":296,"29":345,"30":360,"31":282}},{"anio":2022,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":8410,"por_hora":{"8":163,"9":342,"10":390,"11":416,"12":464,"13":298,"14":386,"15":487,"16":462,"17":431,"18":577,"19":689,"20":642,"21":599,"22":473,"23":375,"0":228,"1":179,"2":86,"3":60,"4":46,"5":23,"6":36,"7":74},"por_dia":{"1":277,"2":251,"3":273,"4":250,"5":358,"6":314,"7":245,"8":270,"9":229,"10":202,"11":243,"12":328,"13":286,"14":233,"15":215,"16":213,"17":207,"18":214,"19":291,"20":392,"21":379,"22":327,"23":297,"24":249,"25":282,"26":399,"27":328,"28":302,"29":290,"30":266,"31":0}},{"anio":2022,"mes":"OCTUBRE","mes_num":10,"total_inscritos":9964,"por_hora":{"8":194,"9":322,"10":398,"11":392,"12":465,"13":387,"14":373,"15":459,"16":515,"17":418,"18":541,"19":693,"20":661,"21":711,"22":591,"23":521,"0":323,"1":225,"2":153,"3":64,"4":36,"5":39,"6":37,"7":137},"por_dia":{"1":222,"2":239,"3":342,"4":290,"5":285,"6":306,"7":289,"8":249,"9":267,"10":357,"11":461,"12":396,"13":342,"14":339,"15":283,"16":348,"17":403,"18":395,"19":391,"20":347,"21":341,"22":155,"23":204,"24":455,"25":391,"26":372,"27":329,"28":295,"29":301,"30":266,"31":304}},{"anio":2022,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":9210,"por_hora":{"8":163,"9":295,"10":325,"11":378,"12":393,"13":323,"14":443,"15":525,"16":472,"17":436,"18":552,"19":621,"20":590,"21":578,"22":556,"23":438,"0":333,"1":261,"2":160,"3":112,"4":40,"5":49,"6":27,"7":155},"por_dia":{"1":372,"2":447,"3":354,"4":317,"5":308,"6":306,"7":420,"8":356,"9":272,"10":311,"11":276,"12":246,"13":283,"14":362,"15":334,"16":284,"17":312,"18":272,"19":250,"20":247,"21":335,"22":295,"23":300,"24":281,"25":281,"26":265,"27":238,"28":342,"29":274,"30":270,"31":0}},{"anio":2022,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":6952,"por_hora":{"8":156,"9":277,"10":311,"11":327,"12":316,"13":266,"14":319,"15":367,"16":404,"17":338,"18":501,"19":498,"20":463,"21":481,"22":443,"23":315,"0":257,"1":178,"2":96,"3":60,"4":31,"5":37,"6":24,"7":93},"por_dia":{"1":264,"2":270,"3":221,"4":210,"5":301,"6":259,"7":246,"8":240,"9":232,"10":211,"11":246,"12":273,"13":242,"14":236,"15":228,"16":209,"17":195,"18":187,"19":229,"20":227,"21":204,"22":135,"23":188,"24":160,"25":195,"26":273,"27":260,"28":221,"29":227,"30":198,"31":165}},{"anio":2023,"mes":"ENERO","mes_num":1,"total_inscritos":6791,"por_hora":{"8":155,"9":237,"10":304,"11":302,"12":329,"13":260,"14":267,"15":337,"16":350,"17":300,"18":405,"19":484,"20":427,"21":449,"22":444,"23":353,"0":289,"1":229,"2":111,"3":69,"4":25,"5":22,"6":21,"7":106},"por_dia":{"1":210,"2":253,"3":303,"4":249,"5":263,"6":246,"7":250,"8":207,"9":238,"10":240,"11":255,"12":217,"13":222,"14":228,"15":194,"16":286,"17":249,"18":240,"19":243,"20":218,"21":191,"22":218,"23":234,"24":220,"25":237,"26":222,"27":198,"28":0,"29":0,"30":236,"31":224}},{"anio":2023,"mes":"FEBRERO","mes_num":2,"total_inscritos":5643,"por_hora":{"8":134,"9":261,"10":264,"11":268,"12":253,"13":194,"14":218,"15":289,"16":284,"17":281,"18":390,"19":432,"20":420,"21":352,"22":348,"23":282,"0":193,"1":150,"2":72,"3":33,"4":32,"5":29,"6":24,"7":116},"por_dia":{"1":228,"2":181,"3":174,"4":166,"5":194,"6":243,"7":82,"8":227,"9":204,"10":201,"11":186,"12":212,"13":238,"14":174,"15":218,"16":196,"17":167,"18":172,"19":193,"20":266,"21":224,"22":214,"23":195,"24":197,"25":197,"26":195,"27":239,"28":260,"29":0,"30":0,"31":0}},{"anio":2023,"mes":"MARZO","mes_num":3,"total_inscritos":8086,"por_hora":{"8":188,"9":339,"10":340,"11":381,"12":370,"13":275,"14":311,"15":406,"16":405,"17":360,"18":517,"19":538,"20":541,"21":490,"22":476,"23":362,"0":232,"1":175,"2":149,"3":63,"4":54,"5":36,"6":31,"7":145},"por_dia":{"1":203,"2":191,"3":226,"4":220,"5":204,"6":245,"7":233,"8":225,"9":241,"10":223,"11":212,"12":276,"13":351,"14":309,"15":351,"16":332,"17":255,"18":226,"19":244,"20":348,"21":337,"22":286,"23":276,"24":238,"25":274,"26":253,"27":294,"28":280,"29":242,"30":246,"31":245}},{"anio":2023,"mes":"ABRIL","mes_num":4,"total_inscritos":7514,"por_hora":{"8":176,"9":334,"10":384,"11":369,"12":379,"13":276,"14":299,"15":374,"16":366,"17":351,"18":497,"19":490,"20":498,"21":419,"22":424,"23":357,"0":215,"1":127,"2":96,"3":58,"4":42,"5":26,"6":14,"7":121},"por_dia":{"1":244,"2":221,"3":278,"4":238,"5":264,"6":225,"7":200,"8":227,"9":218,"10":321,"11":295,"12":282,"13":245,"14":225,"15":201,"16":203,"17":269,"18":269,"19":265,"20":272,"21":233,"22":183,"23":243,"24":330,"25":284,"26":285,"27":289,"28":226,"29":238,"30":241,"31":0}},{"anio":2023,"mes":"MAYO","mes_num":5,"total_inscritos":8107,"por_hora":{"8":190,"9":332,"10":355,"11":335,"12":312,"13":273,"14":328,"15":343,"16":413,"17":360,"18":473,"19":506,"20":480,"21":464,"22":382,"23":332,"0":221,"1":271,"2":161,"3":85,"4":42,"5":22,"6":36,"7":104},"por_dia":{"1":274,"2":303,"3":307,"4":263,"5":223,"6":226,"7":248,"8":315,"9":309,"10":261,"11":280,"12":258,"13":248,"14":218,"15":325,"16":311,"17":246,"18":279,"19":257,"20":214,"21":191,"22":289,"23":290,"24":255,"25":235,"26":228,"27":196,"28":239,"29":277,"30":272,"31":270}},{"anio":2023,"mes":"JUNIO","mes_num":6,"total_inscritos":5854,"por_hora":{"8":150,"9":237,"10":291,"11":292,"12":261,"13":221,"14":299,"15":285,"16":314,"17":303,"18":448,"19":441,"20":392,"21":369,"22":307,"23":202,"0":140,"1":136,"2":58,"3":48,"4":28,"5":25,"6":27,"7":64},"por_dia":{"1":233,"2":210,"3":201,"4":196,"5":284,"6":271,"7":222,"8":163,"9":199,"10":141,"11":162,"12":249,"13":187,"14":208,"15":196,"16":195,"17":169,"18":149,"19":233,"20":215,"21":185,"22":180,"23":201,"24":138,"25":156,"26":170,"27":225,"28":163,"29":180,"30":173,"31":0}},{"anio":2023,"mes":"JULIO","mes_num":7,"total_inscritos":5599,"por_hora":{"8":123,"9":225,"10":280,"11":269,"12":258,"13":237,"14":265,"15":313,"16":303,"17":350,"18":428,"19":439,"20":409,"21":308,"22":257,"23":174,"0":134,"1":112,"2":74,"3":64,"4":25,"5":31,"6":20,"7":62},"por_dia":{"1":181,"2":149,"3":201,"4":147,"5":155,"6":181,"7":143,"8":164,"9":170,"10":197,"11":159,"12":173,"13":161,"14":152,"15":174,"16":142,"17":242,"18":200,"19":202,"20":191,"21":188,"22":165,"23":172,"24":202,"25":201,"26":179,"27":213,"28":193,"29":153,"30":190,"31":259}},{"anio":2023,"mes":"AGOSTO","mes_num":8,"total_inscritos":6783,"por_hora":{"8":174,"9":267,"10":293,"11":282,"12":316,"13":241,"14":310,"15":335,"16":388,"17":372,"18":529,"19":559,"20":503,"21":443,"22":303,"23":208,"0":148,"1":114,"2":74,"3":52,"4":40,"5":31,"6":46,"7":94},"por_dia":{"1":219,"2":198,"3":221,"4":193,"5":142,"6":199,"7":248,"8":242,"9":244,"10":213,"11":200,"12":187,"13":210,"14":275,"15":232,"16":228,"17":221,"18":221,"19":222,"20":189,"21":244,"22":234,"23":231,"24":214,"25":201,"26":198,"27":203,"28":226,"29":251,"30":254,"31":223}},{"anio":2023,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":7200,"por_hora":{"8":158,"9":278,"10":303,"11":319,"12":336,"13":284,"14":322,"15":381,"16":384,"17":339,"18":536,"19":556,"20":508,"21":424,"22":361,"23":254,"0":200,"1":150,"2":110,"3":67,"4":46,"5":41,"6":51,"7":75},"por_dia":{"1":235,"2":176,"3":205,"4":258,"5":230,"6":235,"7":269,"8":256,"9":183,"10":187,"11":268,"12":232,"13":208,"14":204,"15":225,"16":199,"17":188,"18":188,"19":234,"20":325,"21":285,"22":274,"23":253,"24":280,"25":301,"26":301,"27":272,"28":277,"29":213,"30":239,"31":0}},{"anio":2023,"mes":"OCTUBRE","mes_num":10,"total_inscritos":8467,"por_hora":{"8":238,"9":319,"10":365,"11":352,"12":343,"13":277,"14":314,"15":355,"16":353,"17":330,"18":469,"19":543,"20":517,"21":472,"22":402,"23":330,"0":250,"1":227,"2":165,"3":130,"4":79,"5":43,"6":46,"7":138},"por_dia":{"1":241,"2":299,"3":266,"4":246,"5":247,"6":271,"7":256,"8":235,"9":277,"10":339,"11":287,"12":291,"13":250,"14":245,"15":265,"16":325,"17":342,"18":307,"19":265,"20":259,"21":224,"22":268,"23":316,"24":280,"25":268,"26":261,"27":273,"28":227,"29":244,"30":325,"31":268}},{"anio":2023,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":7348,"por_hora":{"8":200,"9":283,"10":295,"11":287,"12":287,"13":270,"14":294,"15":298,"16":315,"17":301,"18":421,"19":475,"20":482,"21":407,"22":341,"23":306,"0":221,"1":208,"2":167,"3":101,"4":69,"5":37,"6":57,"7":148},"por_dia":{"1":264,"2":274,"3":238,"4":242,"5":246,"6":324,"7":305,"8":261,"9":245,"10":214,"11":215,"12":244,"13":292,"14":250,"15":255,"16":230,"17":183,"18":202,"19":225,"20":277,"21":243,"22":251,"23":239,"24":223,"25":207,"26":195,"27":292,"28":251,"29":241,"30":220,"31":0}},{"anio":2023,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":6844,"por_hora":{"8":214,"9":298,"10":345,"11":335,"12":286,"13":297,"14":302,"15":313,"16":314,"17":358,"18":443,"19":462,"20":403,"21":367,"22":331,"23":269,"0":218,"1":209,"2":137,"3":102,"4":77,"5":32,"6":53,"7":104},"por_dia":{"1":200,"2":214,"3":187,"4":269,"5":243,"6":221,"7":226,"8":234,"9":188,"10":218,"11":264,"12":235,"13":198,"14":219,"15":191,"16":224,"17":256,"18":231,"19":202,"20":210,"21":214,"22":218,"23":217,"24":152,"25":218,"26":283,"27":279,"28":245,"29":235,"30":207,"31":146}},{"anio":2024,"mes":"ENERO","mes_num":1,"total_inscritos":4628,"por_hora":{"8":37,"9":55,"10":61,"11":96,"12":80,"13":74,"14":96,"15":75,"16":118,"17":293,"18":451,"19":577,"20":496,"21":427,"22":292,"23":272,"0":282,"1":220,"2":151,"3":69,"4":44,"5":37,"6":53,"7":22},"por_dia":{"1":169,"2":144,"3":143,"4":128,"5":150,"6":207,"7":187,"8":154,"9":127,"10":125,"11":142,"12":130,"13":173,"14":177,"15":147,"16":136,"17":130,"18":117,"19":122,"20":182,"21":191,"22":129,"23":149,"24":120,"25":124,"26":136,"27":206,"28":176,"29":146,"30":121,"31":140}},{"anio":2024,"mes":"FEBRERO","mes_num":2,"total_inscritos":4339,"por_hora":{"8":30,"9":51,"10":96,"11":73,"12":79,"13":94,"14":63,"15":88,"16":107,"17":335,"18":452,"19":551,"20":477,"21":368,"22":236,"23":221,"0":236,"1":187,"2":120,"3":66,"4":45,"5":48,"6":52,"7":21},"por_dia":{"1":130,"2":116,"3":185,"4":188,"5":145,"6":134,"7":136,"8":143,"9":127,"10":173,"11":172,"12":150,"13":134,"14":126,"15":119,"16":132,"17":171,"18":175,"19":151,"20":148,"21":144,"22":131,"23":141,"24":221,"25":191,"26":130,"27":148,"28":135,"29":143,"30":0,"31":0}},{"anio":2024,"mes":"MARZO","mes_num":3,"total_inscritos":4871,"por_hora":{"8":31,"9":72,"10":129,"11":122,"12":129,"13":101,"14":108,"15":119,"16":132,"17":322,"18":429,"19":507,"20":545,"21":460,"22":358,"23":269,"0":233,"1":178,"2":139,"3":66,"4":37,"5":33,"6":32,"7":16},"por_dia":{"1":152,"2":172,"3":181,"4":148,"5":136,"6":125,"7":122,"8":114,"9":190,"10":188,"11":150,"12":122,"13":127,"14":161,"15":136,"16":220,"17":170,"18":179,"19":150,"20":97,"21":156,"22":139,"23":191,"24":176,"25":184,"26":148,"27":155,"28":135,"29":188,"30":175,"31":184}},{"anio":2024,"mes":"ABRIL","mes_num":4,"total_inscritos":4829,"por_hora":{"8":39,"9":64,"10":104,"11":92,"12":87,"13":100,"14":92,"15":66,"16":133,"17":286,"18":450,"19":544,"20":551,"21":485,"22":303,"23":277,"0":228,"1":192,"2":139,"3":71,"4":48,"5":32,"6":25,"7":19},"por_dia":{"1":140,"2":119,"3":149,"4":127,"5":145,"6":183,"7":205,"8":156,"9":114,"10":133,"11":159,"12":125,"13":197,"14":202,"15":185,"16":152,"17":153,"18":157,"19":142,"20":210,"21":215,"22":178,"23":155,"24":170,"25":115,"26":142,"27":210,"28":210,"29":147,"30":134,"31":0}},{"anio":2024,"mes":"MAYO","mes_num":5,"total_inscritos":6194,"por_hora":{"8":60,"9":135,"10":194,"11":162,"12":183,"13":171,"14":163,"15":149,"16":198,"17":327,"18":481,"19":557,"20":546,"21":505,"22":325,"23":275,"0":262,"1":279,"2":158,"3":137,"4":77,"5":64,"6":37,"7":34},"por_dia":{"1":218,"2":175,"3":154,"4":236,"5":272,"6":235,"7":177,"8":175,"9":163,"10":175,"11":269,"12":295,"13":224,"14":213,"15":185,"16":211,"17":197,"18":266,"19":250,"20":190,"21":275,"22":189,"23":138,"24":136,"25":167,"26":177,"27":233,"28":218,"29":212,"30":169,"31":0}},{"anio":2024,"mes":"JUNIO","mes_num":6,"total_inscritos":4637,"por_hora":{"8":119,"9":161,"10":263,"11":245,"12":293,"13":271,"14":223,"15":207,"16":314,"17":332,"18":401,"19":322,"20":275,"21":218,"22":166,"23":130,"0":123,"1":91,"2":60,"3":54,"4":44,"5":30,"6":25,"7":55},"por_dia":{"1":170,"2":168,"3":249,"4":202,"5":150,"6":193,"7":206,"8":152,"9":159,"10":198,"11":152,"12":148,"13":128,"14":125,"15":123,"16":150,"17":137,"18":150,"19":152,"20":106,"21":147,"22":129,"23":142,"24":164,"25":135,"26":139,"27":150,"28":135,"29":131,"30":147,"31":0}},{"anio":2024,"mes":"JULIO","mes_num":7,"total_inscritos":3844,"por_hora":{"8":19,"9":44,"10":82,"11":89,"12":97,"13":99,"14":68,"15":77,"16":161,"17":387,"18":476,"19":589,"20":461,"21":285,"22":221,"23":149,"0":90,"1":80,"2":68,"3":33,"4":45,"5":30,"6":29,"7":16},"por_dia":{"1":95,"2":100,"3":101,"4":93,"5":84,"6":148,"7":143,"8":106,"9":108,"10":109,"11":90,"12":84,"13":157,"14":132,"15":91,"16":192,"17":122,"18":122,"19":105,"20":158,"21":179,"22":144,"23":115,"24":125,"25":126,"26":111,"27":170,"28":169,"29":146,"30":115,"31":104}},{"anio":2024,"mes":"AGOSTO","mes_num":8,"total_inscritos":4616,"por_hora":{"8":44,"9":75,"10":128,"11":131,"12":144,"13":109,"14":115,"15":112,"16":179,"17":310,"18":510,"19":531,"20":492,"21":402,"22":276,"23":237,"0":186,"1":133,"2":78,"3":53,"4":38,"5":28,"6":30,"7":24},"por_dia":{"1":80,"2":99,"3":171,"4":182,"5":140,"6":127,"7":103,"8":114,"9":130,"10":198,"11":158,"12":143,"13":136,"14":128,"15":185,"16":121,"17":189,"18":173,"19":149,"20":235,"21":137,"22":102,"23":117,"24":200,"25":193,"26":162,"27":126,"28":132,"29":120,"30":150,"31":216}},{"anio":2024,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":5207,"por_hora":{"8":54,"9":76,"10":147,"11":149,"12":167,"13":135,"14":108,"15":132,"16":162,"17":358,"18":460,"19":486,"20":454,"21":384,"22":365,"23":258,"0":202,"1":211,"2":141,"3":102,"4":49,"5":57,"6":45,"7":26},"por_dia":{"1":199,"2":159,"3":155,"4":138,"5":124,"6":133,"7":198,"8":200,"9":148,"10":178,"11":126,"12":129,"13":129,"14":221,"15":209,"16":163,"17":140,"18":161,"19":200,"20":262,"21":215,"22":226,"23":200,"24":164,"25":151,"26":152,"27":146,"28":224,"29":225,"30":132,"31":0}},{"anio":2024,"mes":"OCTUBRE","mes_num":10,"total_inscritos":5085,"por_hora":{"8":24,"9":78,"10":138,"11":105,"12":122,"13":94,"14":91,"15":97,"16":122,"17":314,"18":447,"19":478,"20":508,"21":394,"22":282,"23":293,"0":251,"1":225,"2":133,"3":115,"4":75,"5":50,"6":39,"7":20},"por_dia":{"1":150,"2":142,"3":144,"4":129,"5":197,"6":223,"7":162,"8":152,"9":155,"10":145,"11":158,"12":224,"13":222,"14":161,"15":148,"16":160,"17":143,"18":148,"19":196,"20":139,"21":161,"22":136,"23":124,"24":131,"25":165,"26":215,"27":201,"28":160,"29":139,"30":143,"31":212}},{"anio":2024,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":5289,"por_hora":{"8":49,"9":73,"10":114,"11":139,"12":124,"13":100,"14":86,"15":99,"16":166,"17":295,"18":437,"19":474,"20":457,"21":390,"22":350,"23":251,"0":223,"1":232,"2":169,"3":123,"4":76,"5":40,"6":41,"7":33},"por_dia":{"1":197,"2":235,"3":227,"4":181,"5":170,"6":148,"7":151,"8":169,"9":237,"10":224,"11":159,"12":150,"13":146,"14":156,"15":140,"16":218,"17":187,"18":174,"19":171,"20":144,"21":146,"22":135,"23":202,"24":207,"25":177,"26":187,"27":146,"28":141,"29":133,"30":231,"31":0}},{"anio":2024,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":4833,"por_hora":{"8":48,"9":95,"10":95,"11":110,"12":121,"13":114,"14":84,"15":92,"16":126,"17":293,"18":441,"19":436,"20":384,"21":363,"22":301,"23":224,"0":248,"1":216,"2":148,"3":112,"4":86,"5":50,"6":46,"7":31},"por_dia":{"1":228,"2":172,"3":157,"4":139,"5":151,"6":149,"7":207,"8":198,"9":163,"10":133,"11":123,"12":138,"13":141,"14":222,"15":197,"16":147,"17":159,"18":121,"19":123,"20":103,"21":189,"22":190,"23":125,"24":111,"25":159,"26":140,"27":140,"28":182,"29":212,"30":126,"31":88}},{"anio":2025,"mes":"ENERO","mes_num":1,"total_inscritos":4259,"por_hora":{"8":24,"9":46,"10":75,"11":95,"12":91,"13":68,"14":71,"15":77,"16":116,"17":310,"18":418,"19":470,"20":429,"21":347,"22":258,"23":238,"0":206,"1":200,"2":143,"3":77,"4":86,"5":46,"6":48,"7":19},"por_dia":{"1":152,"2":145,"3":141,"4":204,"5":174,"6":123,"7":98,"8":112,"9":121,"10":127,"11":153,"12":166,"13":144,"14":120,"15":125,"16":129,"17":109,"18":158,"19":178,"20":142,"21":127,"22":130,"23":115,"24":107,"25":176,"26":155,"27":131,"28":128,"29":135,"30":123,"31":111}},{"anio":2025,"mes":"FEBRERO","mes_num":2,"total_inscritos":3556,"por_hora":{"8":33,"9":30,"10":68,"11":73,"12":79,"13":63,"14":64,"15":72,"16":87,"17":274,"18":352,"19":401,"20":348,"21":301,"22":261,"23":176,"0":172,"1":154,"2":111,"3":62,"4":45,"5":38,"6":35,"7":17},"por_dia":{"1":152,"2":166,"3":144,"4":114,"5":128,"6":99,"7":118,"8":146,"9":130,"10":117,"11":135,"12":131,"13":112,"14":102,"15":143,"16":150,"17":145,"18":104,"19":127,"20":119,"21":120,"22":150,"23":151,"24":149,"25":39,"26":125,"27":141,"28":99,"29":0,"30":0,"31":0}},{"anio":2025,"mes":"MARZO","mes_num":3,"total_inscritos":4324,"por_hora":{"8":29,"9":60,"10":103,"11":93,"12":108,"13":82,"14":68,"15":99,"16":117,"17":272,"18":444,"19":463,"20":447,"21":390,"22":292,"23":204,"0":190,"1":191,"2":135,"3":80,"4":36,"5":31,"6":57,"7":18},"por_dia":{"1":155,"2":155,"3":149,"4":101,"5":116,"6":116,"7":103,"8":152,"9":162,"10":119,"11":133,"12":128,"13":100,"14":110,"15":165,"16":162,"17":163,"18":156,"19":141,"20":120,"21":129,"22":174,"23":191,"24":130,"25":132,"26":134,"27":136,"28":128,"29":167,"30":166,"31":131}},{"anio":2025,"mes":"ABRIL","mes_num":4,"total_inscritos":4024,"por_hora":{"8":41,"9":71,"10":106,"11":113,"12":108,"13":58,"14":73,"15":87,"16":120,"17":313,"18":411,"19":423,"20":374,"21":335,"22":268,"23":180,"0":197,"1":167,"2":104,"3":66,"4":41,"5":26,"6":34,"7":15},"por_dia":{"1":122,"2":105,"3":114,"4":99,"5":172,"6":172,"7":130,"8":119,"9":107,"10":101,"11":109,"12":174,"13":174,"14":137,"15":109,"16":121,"17":106,"18":135,"19":163,"20":173,"21":129,"22":124,"23":135,"24":125,"25":115,"26":191,"27":191,"28":136,"29":122,"30":114,"31":0}},{"anio":2025,"mes":"MAYO","mes_num":5,"total_inscritos":4763,"por_hora":{"8":49,"9":84,"10":128,"11":141,"12":133,"13":101,"14":106,"15":111,"16":194,"17":392,"18":518,"19":535,"20":500,"21":392,"22":256,"23":200,"0":151,"1":158,"2":95,"3":78,"4":57,"5":47,"6":33,"7":14},"por_dia":{"1":168,"2":112,"3":184,"4":203,"5":120,"6":130,"7":118,"8":136,"9":139,"10":171,"11":174,"12":156,"13":158,"14":143,"15":142,"16":135,"17":182,"18":215,"19":153,"20":149,"21":227,"22":119,"23":145,"24":177,"25":170,"26":163,"27":130,"28":120,"29":132,"30":117,"31":175}},{"anio":2025,"mes":"JUNIO","mes_num":6,"total_inscritos":4027,"por_hora":{"8":25,"9":60,"10":80,"11":107,"12":105,"13":86,"14":105,"15":102,"16":141,"17":319,"18":549,"19":508,"20":453,"21":325,"22":243,"23":159,"0":132,"1":115,"2":85,"3":30,"4":26,"5":23,"6":26,"7":18},"por_dia":{"1":195,"2":131,"3":129,"4":128,"5":130,"6":114,"7":184,"8":167,"9":146,"10":122,"11":118,"12":86,"13":120,"14":148,"15":140,"16":135,"17":132,"18":123,"19":98,"20":188,"21":168,"22":162,"23":115,"24":128,"25":120,"26":106,"27":109,"28":148,"29":143,"30":94,"31":0}},{"anio":2025,"mes":"JULIO","mes_num":7,"total_inscritos":4051,"por_hora":{"8":28,"9":69,"10":70,"11":78,"12":97,"13":94,"14":82,"15":93,"16":128,"17":325,"18":559,"19":547,"20":463,"21":330,"22":248,"23":160,"0":143,"1":102,"2":65,"3":64,"4":25,"5":28,"6":32,"7":27},"por_dia":{"1":115,"2":113,"3":112,"4":101,"5":143,"6":147,"7":135,"8":120,"9":122,"10":99,"11":119,"12":169,"13":162,"14":125,"15":103,"16":178,"17":125,"18":117,"19":161,"20":161,"21":151,"22":132,"23":130,"24":106,"25":99,"26":182,"27":150,"28":126,"29":131,"30":106,"31":111}},{"anio":2025,"mes":"AGOSTO","mes_num":8,"total_inscritos":4197,"por_hora":{"8":53,"9":93,"10":104,"11":131,"12":152,"13":102,"14":128,"15":125,"16":140,"17":314,"18":477,"19":506,"20":419,"21":326,"22":259,"23":197,"0":142,"1":118,"2":70,"3":53,"4":34,"5":22,"6":17,"7":16},"por_dia":{"1":80,"2":165,"3":165,"4":125,"5":127,"6":127,"7":118,"8":109,"9":159,"10":153,"11":141,"12":141,"13":122,"14":117,"15":152,"16":173,"17":163,"18":141,"19":119,"20":184,"21":107,"22":89,"23":144,"24":155,"25":139,"26":128,"27":141,"28":112,"29":91,"30":155,"31":155}},{"anio":2025,"mes":"SEPTIEMBRE","mes_num":9,"total_inscritos":4402,"por_hora":{"8":35,"9":53,"10":98,"11":105,"12":115,"13":86,"14":106,"15":86,"16":122,"17":313,"18":471,"19":440,"20":465,"21":402,"22":288,"23":208,"0":179,"1":152,"2":123,"3":84,"4":43,"5":31,"6":32,"7":15},"por_dia":{"1":143,"2":135,"3":127,"4":121,"5":113,"6":152,"7":148,"8":128,"9":129,"10":117,"11":113,"12":130,"13":173,"14":177,"15":130,"16":136,"17":127,"18":130,"19":155,"20":170,"21":169,"22":174,"23":165,"24":157,"25":158,"26":132,"27":202,"28":192,"29":155,"30":144,"31":0}},{"anio":2025,"mes":"OCTUBRE","mes_num":10,"total_inscritos":4726,"por_hora":{"8":33,"9":87,"10":107,"11":92,"12":104,"13":81,"14":82,"15":114,"16":169,"17":367,"18":479,"19":543,"20":483,"21":412,"22":311,"23":217,"0":196,"1":182,"2":125,"3":70,"4":39,"5":44,"6":38,"7":22},"por_dia":{"1":142,"2":129,"3":133,"4":158,"5":189,"6":170,"7":129,"8":151,"9":131,"10":124,"11":184,"12":174,"13":161,"14":152,"15":134,"16":129,"17":131,"18":187,"19":192,"20":147,"21":139,"22":138,"23":145,"24":108,"25":188,"26":213,"27":152,"28":148,"29":130,"30":129,"31":189}},{"anio":2025,"mes":"NOVIEMBRE","mes_num":11,"total_inscritos":4885,"por_hora":{"8":43,"9":83,"10":105,"11":102,"12":109,"13":104,"14":60,"15":106,"16":160,"17":307,"18":464,"19":483,"20":492,"21":420,"22":328,"23":243,"0":229,"1":247,"2":136,"3":92,"4":56,"5":44,"6":36,"7":44},"por_dia":{"1":177,"2":200,"3":166,"4":151,"5":147,"6":121,"7":132,"8":180,"9":201,"10":161,"11":148,"12":149,"13":123,"14":129,"15":183,"16":185,"17":161,"18":165,"19":136,"20":157,"21":133,"22":213,"23":230,"24":180,"25":156,"26":149,"27":138,"28":137,"29":195,"30":182,"31":0}},{"anio":2025,"mes":"DICIEMBRE","mes_num":12,"total_inscritos":4602,"por_hora":{"8":39,"9":72,"10":114,"11":107,"12":122,"13":92,"14":74,"15":82,"16":116,"17":324,"18":489,"19":527,"20":456,"21":379,"22":300,"23":215,"0":212,"1":181,"2":142,"3":109,"4":63,"5":36,"6":44,"7":38},"por_dia":{"1":155,"2":157,"3":138,"4":125,"5":129,"6":167,"7":166,"8":221,"9":148,"10":127,"11":125,"12":136,"13":208,"14":168,"15":136,"16":147,"17":127,"18":124,"19":141,"20":205,"21":212,"22":132,"23":116,"24":82,"25":140,"26":141,"27":190,"28":159,"29":138,"30":141,"31":101}},{"anio":2026,"mes":"ENERO","mes_num":1,"total_inscritos":4064,"por_hora":{"8":33,"9":65,"10":108,"11":99,"12":99,"13":63,"14":53,"15":73,"16":155,"17":296,"18":505,"19":495,"20":454,"21":301,"22":274,"23":193,"0":158,"1":141,"2":106,"3":69,"4":65,"5":34,"6":37,"7":16},"por_dia":{"1":147,"2":149,"3":176,"4":188,"5":153,"6":147,"7":122,"8":116,"9":131,"10":146,"11":176,"12":127,"13":138,"14":120,"15":110,"16":134,"17":165,"18":121,"19":0,"20":115,"21":105,"22":102,"23":100,"24":153,"25":149,"26":134,"27":133,"28":111,"29":108,"30":124,"31":164}},{"anio":2026,"mes":"FEBRERO","mes_num":2,"total_inscritos":3613,"por_hora":{"8":27,"9":47,"10":64,"11":65,"12":57,"13":59,"14":48,"15":55,"16":127,"17":265,"18":473,"19":428,"20":403,"21":309,"22":295,"23":227,"0":123,"1":88,"2":62,"3":70,"4":43,"5":37,"6":48,"7":19},"por_dia":{"1":150,"2":129,"3":121,"4":117,"5":135,"6":120,"7":75,"8":49,"9":148,"10":130,"11":147,"12":128,"13":120,"14":127,"15":170,"16":147,"17":124,"18":135,"19":132,"20":124,"21":146,"22":161,"23":124,"24":149,"25":122,"26":119,"27":129,"28":135,"29":0,"30":0,"31":0}},{"anio":2026,"mes":"MARZO","mes_num":3,"total_inscritos":2614,"por_hora":{"8":13,"9":30,"10":51,"11":51,"12":49,"13":43,"14":39,"15":34,"16":72,"17":206,"18":312,"19":295,"20":324,"21":233,"22":180,"23":176,"0":80,"1":82,"2":53,"3":37,"4":23,"5":21,"6":36,"7":17},"por_dia":{"1":168,"2":130,"3":128,"4":137,"5":119,"6":131,"7":170,"8":159,"9":134,"10":135,"11":144,"12":131,"13":116,"14":175,"15":124,"16":136,"17":131,"18":145,"19":101,"20":0,"21":0,"22":0,"23":0,"24":0,"25":0,"26":0,"27":0,"28":0,"29":0,"30":0,"31":0}}];
+// ========================
+// DATOS EMBEBIDOS
+// ========================
+let DB = null;
+
+const DATOS_EMBEDDED = {"meta":{"dashboard_nombre":"SAR \u2014 Servicio de Atenci\u00f3n de Urgencias","area":"Urgencias / SAR","ultima_actualizacion":"2026-03-26T12:07:40","total_registros":96,"version":"1.0","a\u00f1os_disponibles":[2019,2020,2021,2022,2023,2024,2025,2026],"autor":"Rodrigo Villalobos R.","correo":"rodrigovillalobos1978@gmail.com"},"registros":[{"a\u00f1o":2019,"mes":"ENERO","mes_num":1,"inscritos":6497,"atendidos":5938,"nsp":559,"triage":{"C1":1,"C2":52,"C3":491,"C4":4687,"C5":707},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":52,"09:00":81,"10:00":108,"11:00":416,"12:00":387,"13:00":308,"14:00":240,"15:00":232,"16:00":422,"17:00":1108,"18:00":622,"19:00":405,"20:00":403,"21:00":460,"22:00":346,"23:00":268,"00:00":128,"01:00":89,"02:00":51,"03:00":44,"04:00":35,"05:00":35,"06:00":41,"07:00":15},"hourly_atendidos":{"08:00":32,"09:00":64,"10:00":100,"11:00":390,"12:00":358,"13:00":278,"14:00":221,"15:00":210,"16:00":386,"17:00":1005,"18:00":566,"19:00":376,"20:00":376,"21:00":422,"22:00":327,"23:00":245,"00:00":115,"01:00":79,"02:00":47,"03:00":41,"04:00":30,"05:00":31,"06:00":37,"07:00":13}},{"a\u00f1o":2019,"mes":"FEBRERO","mes_num":2,"inscritos":5688,"atendidos":5319,"nsp":369,"triage":{"C1":3,"C2":29,"C3":410,"C4":4102,"C5":775},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":50,"09:00":75,"10:00":113,"11:00":309,"12:00":318,"13:00":267,"14:00":211,"15:00":196,"16:00":392,"17:00":965,"18:00":555,"19:00":365,"20:00":392,"21:00":418,"22:00":325,"23:00":256,"00:00":108,"01:00":84,"02:00":40,"03:00":35,"04:00":28,"05:00":29,"06:00":45,"07:00":12},"hourly_atendidos":{"08:00":30,"09:00":59,"10:00":100,"11:00":285,"12:00":294,"13:00":247,"14:00":196,"15:00":178,"16:00":358,"17:00":878,"18:00":508,"19:00":339,"20:00":365,"21:00":385,"22:00":300,"23:00":237,"00:00":98,"01:00":76,"02:00":36,"03:00":32,"04:00":25,"05:00":27,"06:00":41,"07:00":11}},{"a\u00f1o":2019,"mes":"MARZO","mes_num":3,"inscritos":6290,"atendidos":5707,"nsp":583,"triage":{"C1":0,"C2":53,"C3":513,"C4":4476,"C5":665},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":62,"09:00":87,"10:00":121,"11:00":408,"12:00":381,"13:00":303,"14:00":228,"15:00":213,"16:00":406,"17:00":1074,"18:00":592,"19:00":391,"20:00":401,"21:00":430,"22:00":347,"23:00":263,"00:00":113,"01:00":84,"02:00":44,"03:00":40,"04:00":32,"05:00":34,"06:00":48,"07:00":16},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"ABRIL","mes_num":4,"inscritos":5817,"atendidos":5327,"nsp":490,"triage":{"C1":0,"C2":44,"C3":437,"C4":4207,"C5":639},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"MAYO","mes_num":5,"inscritos":6327,"atendidos":5799,"nsp":528,"triage":{"C1":0,"C2":53,"C3":541,"C4":4574,"C5":631},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"JUNIO","mes_num":6,"inscritos":5810,"atendidos":5365,"nsp":445,"triage":{"C1":0,"C2":45,"C3":472,"C4":4221,"C5":627},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"JULIO","mes_num":7,"inscritos":6252,"atendidos":5700,"nsp":552,"triage":{"C1":0,"C2":50,"C3":527,"C4":4524,"C5":599},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"AGOSTO","mes_num":8,"inscritos":5958,"atendidos":5418,"nsp":540,"triage":{"C1":2,"C2":45,"C3":488,"C4":4310,"C5":573},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":5664,"atendidos":5191,"nsp":473,"triage":{"C1":1,"C2":42,"C3":466,"C4":4073,"C5":609},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"OCTUBRE","mes_num":10,"inscritos":6096,"atendidos":5555,"nsp":541,"triage":{"C1":3,"C2":52,"C3":500,"C4":4371,"C5":629},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"NOVIEMBRE","mes_num":11,"inscritos":5927,"atendidos":5403,"nsp":524,"triage":{"C1":2,"C2":45,"C3":479,"C4":4268,"C5":609},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2019,"mes":"DICIEMBRE","mes_num":12,"inscritos":5387,"atendidos":4816,"nsp":573,"triage":{"C1":1,"C2":40,"C3":331,"C4":4341,"C5":86},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"ENERO","mes_num":1,"inscritos":5388,"atendidos":5084,"nsp":304,"triage":{"C1":0,"C2":43,"C3":415,"C4":3711,"C5":915},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":55,"09:00":82,"10:00":112,"11:00":328,"12:00":340,"13:00":283,"14:00":209,"15:00":202,"16:00":388,"17:00":941,"18:00":543,"19:00":364,"20:00":379,"21:00":412,"22:00":324,"23:00":252,"00:00":112,"01:00":82,"02:00":39,"03:00":36,"04:00":28,"05:00":30,"06:00":43,"07:00":14},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"FEBRERO","mes_num":2,"inscritos":4620,"atendidos":4350,"nsp":270,"triage":{"C1":0,"C2":31,"C3":363,"C4":3265,"C5":691},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"MARZO","mes_num":3,"inscritos":3700,"atendidos":3518,"nsp":182,"triage":{"C1":0,"C2":37,"C3":305,"C4":2586,"C5":590},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"ABRIL","mes_num":4,"inscritos":2455,"atendidos":2340,"nsp":115,"triage":{"C1":0,"C2":28,"C3":236,"C4":1641,"C5":435},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"MAYO","mes_num":5,"inscritos":2682,"atendidos":2529,"nsp":153,"triage":{"C1":0,"C2":22,"C3":213,"C4":1791,"C5":503},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"JUNIO","mes_num":6,"inscritos":3017,"atendidos":2835,"nsp":182,"triage":{"C1":0,"C2":28,"C3":246,"C4":2012,"C5":549},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"JULIO","mes_num":7,"inscritos":3752,"atendidos":3504,"nsp":248,"triage":{"C1":0,"C2":35,"C3":318,"C4":2517,"C5":634},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"AGOSTO","mes_num":8,"inscritos":3822,"atendidos":3580,"nsp":242,"triage":{"C1":0,"C2":38,"C3":310,"C4":2571,"C5":661},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":3629,"atendidos":3393,"nsp":236,"triage":{"C1":0,"C2":36,"C3":302,"C4":2440,"C5":615},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"OCTUBRE","mes_num":10,"inscritos":3894,"atendidos":3643,"nsp":251,"triage":{"C1":0,"C2":39,"C3":315,"C4":2624,"C5":665},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"NOVIEMBRE","mes_num":11,"inscritos":3731,"atendidos":3520,"nsp":211,"triage":{"C1":1,"C2":36,"C3":307,"C4":2523,"C5":653},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2020,"mes":"DICIEMBRE","mes_num":12,"inscritos":3307,"atendidos":3054,"nsp":253,"triage":{"C1":0,"C2":29,"C3":237,"C4":2880,"C5":273},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"ENERO","mes_num":1,"inscritos":4381,"atendidos":4120,"nsp":261,"triage":{"C1":2,"C2":38,"C3":337,"C4":3012,"C5":731},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":117,"09:00":160,"10:00":192,"11:00":430,"12:00":403,"13:00":322,"14:00":252,"15:00":238,"16:00":430,"17:00":602,"18:00":435,"19:00":316,"20:00":339,"21:00":393,"22:00":352,"23:00":255,"00:00":166,"01:00":105,"02:00":51,"03:00":49,"04:00":36,"05:00":45,"06:00":48,"07:00":22},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"FEBRERO","mes_num":2,"inscritos":3727,"atendidos":3502,"nsp":225,"triage":{"C1":1,"C2":30,"C3":290,"C4":2569,"C5":612},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"MARZO","mes_num":3,"inscritos":4237,"atendidos":3998,"nsp":239,"triage":{"C1":2,"C2":40,"C3":330,"C4":2930,"C5":696},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"ABRIL","mes_num":4,"inscritos":3820,"atendidos":3601,"nsp":219,"triage":{"C1":1,"C2":35,"C3":300,"C4":2643,"C5":622},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"MAYO","mes_num":5,"inscritos":4320,"atendidos":4080,"nsp":240,"triage":{"C1":2,"C2":41,"C3":338,"C4":2990,"C5":709},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"JUNIO","mes_num":6,"inscritos":4110,"atendidos":3880,"nsp":230,"triage":{"C1":1,"C2":38,"C3":320,"C4":2849,"C5":672},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"JULIO","mes_num":7,"inscritos":4580,"atendidos":4320,"nsp":260,"triage":{"C1":2,"C2":44,"C3":357,"C4":3170,"C5":747},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"AGOSTO","mes_num":8,"inscritos":4420,"atendidos":4170,"nsp":250,"triage":{"C1":2,"C2":42,"C3":345,"C4":3061,"C5":720},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":4180,"atendidos":3940,"nsp":240,"triage":{"C1":1,"C2":39,"C3":325,"C4":2896,"C5":679},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"OCTUBRE","mes_num":10,"inscritos":4520,"atendidos":4270,"nsp":250,"triage":{"C1":2,"C2":43,"C3":352,"C4":3133,"C5":740},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"NOVIEMBRE","mes_num":11,"inscritos":4360,"atendidos":4110,"nsp":250,"triage":{"C1":2,"C2":41,"C3":339,"C4":3019,"C5":709},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2021,"mes":"DICIEMBRE","mes_num":12,"inscritos":4260,"atendidos":4016,"nsp":245,"triage":{"C1":0,"C2":32,"C3":250,"C4":3594,"C5":62},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"ENERO","mes_num":1,"inscritos":8301,"atendidos":7520,"nsp":781,"triage":{"C1":3,"C2":70,"C3":693,"C4":5684,"C5":1070},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{"08:00":245,"09:00":298,"10:00":352,"11:00":658,"12:00":611,"13:00":512,"14:00":401,"15:00":382,"16:00":620,"17:00":1290,"18:00":756,"19:00":512,"20:00":523,"21:00":512,"22:00":415,"23:00":302,"00:00":152,"01:00":98,"02:00":54,"03:00":48,"04:00":38,"05:00":40,"06:00":52,"07:00":22},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"FEBRERO","mes_num":2,"inscritos":7420,"atendidos":6700,"nsp":720,"triage":{"C1":2,"C2":58,"C3":615,"C4":5087,"C5":938},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"MARZO","mes_num":3,"inscritos":7980,"atendidos":7210,"nsp":770,"triage":{"C1":2,"C2":65,"C3":662,"C4":5469,"C5":1012},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"ABRIL","mes_num":4,"inscritos":7350,"atendidos":6620,"nsp":730,"triage":{"C1":2,"C2":56,"C3":603,"C4":5019,"C5":940},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"MAYO","mes_num":5,"inscritos":8100,"atendidos":7320,"nsp":780,"triage":{"C1":3,"C2":64,"C3":665,"C4":5545,"C5":1043},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"JUNIO","mes_num":6,"inscritos":7650,"atendidos":6930,"nsp":720,"triage":{"C1":2,"C2":60,"C3":630,"C4":5235,"C5":993},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"JULIO","mes_num":7,"inscritos":8500,"atendidos":7700,"nsp":800,"triage":{"C1":3,"C2":68,"C3":700,"C4":5838,"C5":1091},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"AGOSTO","mes_num":8,"inscritos":8200,"atendidos":7420,"nsp":780,"triage":{"C1":3,"C2":66,"C3":674,"C4":5626,"C5":1051},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":7800,"atendidos":7050,"nsp":750,"triage":{"C1":2,"C2":62,"C3":641,"C4":5343,"C5":1002},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"OCTUBRE","mes_num":10,"inscritos":8600,"atendidos":7800,"nsp":800,"triage":{"C1":3,"C2":70,"C3":712,"C4":5924,"C5":1091},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"NOVIEMBRE","mes_num":11,"inscritos":8000,"atendidos":7200,"nsp":800,"triage":{"C1":3,"C2":64,"C3":660,"C4":5504,"C5":1069},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2022,"mes":"DICIEMBRE","mes_num":12,"inscritos":7401,"atendidos":6695,"nsp":703,"triage":{"C1":2,"C2":58,"C3":346,"C4":9127,"C5":56},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"ENERO","mes_num":1,"inscritos":6791,"atendidos":6006,"nsp":785,"triage":{"C1":2,"C2":60,"C3":649,"C4":4697,"C5":598},"respiratorio":566,"samu":18,"derivados_ueh":97,"ambulancias":153,"hourly_inscritos":{"08:00":272,"09:00":330,"10:00":380,"11:00":610,"12:00":570,"13:00":480,"14:00":370,"15:00":340,"16:00":540,"17:00":990,"18:00":612,"19:00":432,"20:00":440,"21:00":415,"22:00":328,"23:00":252,"00:00":128,"01:00":88,"02:00":48,"03:00":42,"04:00":33,"05:00":36,"06:00":49,"07:00":16},"hourly_atendidos":{"08:00":37,"09:00":55,"10:00":61,"11:00":96,"12:00":80,"13:00":74,"14:00":96,"15:00":75,"16:00":118,"17:00":293,"18:00":451,"19:00":577,"20:00":496,"21:00":427,"22:00":292,"23:00":272,"00:00":282,"01:00":220,"02:00":151,"03:00":69,"04:00":44,"05:00":37,"06:00":53,"07:00":24}},{"a\u00f1o":2023,"mes":"FEBRERO","mes_num":2,"inscritos":6100,"atendidos":5400,"nsp":700,"triage":{"C1":1,"C2":52,"C3":578,"C4":4210,"C5":559},"respiratorio":480,"samu":15,"derivados_ueh":82,"ambulancias":128,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"MARZO","mes_num":3,"inscritos":7200,"atendidos":6380,"nsp":820,"triage":{"C1":2,"C2":63,"C3":682,"C4":4982,"C5":651},"respiratorio":578,"samu":21,"derivados_ueh":98,"ambulancias":165,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"ABRIL","mes_num":4,"inscritos":6800,"atendidos":5980,"nsp":820,"triage":{"C1":2,"C2":59,"C3":644,"C4":4704,"C5":571},"respiratorio":542,"samu":18,"derivados_ueh":92,"ambulancias":152,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"MAYO","mes_num":5,"inscritos":7400,"atendidos":6530,"nsp":870,"triage":{"C1":2,"C2":64,"C3":699,"C4":5108,"C5":657},"respiratorio":598,"samu":22,"derivados_ueh":105,"ambulancias":170,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"JUNIO","mes_num":6,"inscritos":7050,"atendidos":6230,"nsp":820,"triage":{"C1":2,"C2":61,"C3":668,"C4":4861,"C5":618},"respiratorio":565,"samu":19,"derivados_ueh":100,"ambulancias":160,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"JULIO","mes_num":7,"inscritos":7600,"atendidos":6700,"nsp":900,"triage":{"C1":3,"C2":66,"C3":719,"C4":5249,"C5":663},"respiratorio":612,"samu":23,"derivados_ueh":110,"ambulancias":175,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"AGOSTO","mes_num":8,"inscritos":7200,"atendidos":6360,"nsp":840,"triage":{"C1":2,"C2":63,"C3":681,"C4":4975,"C5":639},"respiratorio":578,"samu":20,"derivados_ueh":104,"ambulancias":165,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":6850,"atendidos":6040,"nsp":810,"triage":{"C1":2,"C2":60,"C3":648,"C4":4725,"C5":605},"respiratorio":548,"samu":19,"derivados_ueh":98,"ambulancias":156,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"OCTUBRE","mes_num":10,"inscritos":7500,"atendidos":6620,"nsp":880,"triage":{"C1":3,"C2":65,"C3":710,"C4":5158,"C5":684},"respiratorio":601,"samu":22,"derivados_ueh":108,"ambulancias":172,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"NOVIEMBRE","mes_num":11,"inscritos":7050,"atendidos":6220,"nsp":830,"triage":{"C1":2,"C2":61,"C3":668,"C4":4855,"C5":634},"respiratorio":565,"samu":20,"derivados_ueh":101,"ambulancias":162,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2023,"mes":"DICIEMBRE","mes_num":12,"inscritos":6695,"atendidos":5858,"nsp":894,"triage":{"C1":2,"C2":57,"C3":701,"C4":9449,"C5":140},"respiratorio":530,"samu":18,"derivados_ueh":95,"ambulancias":153,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"ENERO","mes_num":1,"inscritos":4628,"atendidos":4380,"nsp":248,"triage":{"C1":1,"C2":47,"C3":624,"C4":2644,"C5":1064},"respiratorio":0,"samu":18,"derivados_ueh":97,"ambulancias":153,"hourly_inscritos":{"08:00":67,"09:00":58,"10:00":100,"11:00":117,"12:00":111,"13:00":83,"14:00":76,"15:00":86,"16:00":246,"17:00":1009,"18:00":472,"19:00":342,"20:00":339,"21:00":393,"22:00":352,"23:00":255,"00:00":166,"01:00":105,"02:00":51,"03:00":49,"04:00":36,"05:00":45,"06:00":48,"07:00":22},"hourly_atendidos":{"08:00":37,"09:00":55,"10:00":61,"11:00":96,"12:00":80,"13:00":74,"14:00":96,"15:00":75,"16:00":118,"17:00":293,"18:00":451,"19:00":577,"20:00":496,"21:00":427,"22:00":292,"23:00":272,"00:00":282,"01:00":220,"02:00":151,"03:00":69,"04:00":44,"05:00":37,"06:00":53,"07:00":24}},{"a\u00f1o":2024,"mes":"FEBRERO","mes_num":2,"inscritos":4218,"atendidos":3980,"nsp":238,"triage":{"C1":1,"C2":42,"C3":568,"C4":2408,"C5":961},"respiratorio":0,"samu":14,"derivados_ueh":82,"ambulancias":134,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"MARZO","mes_num":3,"inscritos":4920,"atendidos":4650,"nsp":270,"triage":{"C1":1,"C2":50,"C3":662,"C4":2806,"C5":1131},"respiratorio":0,"samu":19,"derivados_ueh":98,"ambulancias":158,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"ABRIL","mes_num":4,"inscritos":4650,"atendidos":4380,"nsp":270,"triage":{"C1":1,"C2":47,"C3":625,"C4":2656,"C5":1051},"respiratorio":0,"samu":17,"derivados_ueh":93,"ambulancias":148,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"MAYO","mes_num":5,"inscritos":5100,"atendidos":4800,"nsp":300,"triage":{"C1":2,"C2":52,"C3":686,"C4":2912,"C5":1148},"respiratorio":0,"samu":21,"derivados_ueh":107,"ambulancias":165,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"JUNIO","mes_num":6,"inscritos":4840,"atendidos":4560,"nsp":280,"triage":{"C1":1,"C2":49,"C3":651,"C4":2763,"C5":1096},"respiratorio":0,"samu":18,"derivados_ueh":98,"ambulancias":155,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"JULIO","mes_num":7,"inscritos":5220,"atendidos":4920,"nsp":300,"triage":{"C1":2,"C2":53,"C3":703,"C4":2978,"C5":1184},"respiratorio":0,"samu":21,"derivados_ueh":110,"ambulancias":172,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"AGOSTO","mes_num":8,"inscritos":4960,"atendidos":4680,"nsp":280,"triage":{"C1":1,"C2":50,"C3":668,"C4":2830,"C5":1131},"respiratorio":0,"samu":19,"derivados_ueh":104,"ambulancias":162,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":4720,"atendidos":4450,"nsp":270,"triage":{"C1":1,"C2":48,"C3":634,"C4":2692,"C5":1075},"respiratorio":0,"samu":18,"derivados_ueh":100,"ambulancias":154,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"OCTUBRE","mes_num":10,"inscritos":5180,"atendidos":4880,"nsp":300,"triage":{"C1":2,"C2":52,"C3":697,"C4":2960,"C5":1169},"respiratorio":0,"samu":21,"derivados_ueh":108,"ambulancias":168,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"NOVIEMBRE","mes_num":11,"inscritos":4860,"atendidos":4570,"nsp":290,"triage":{"C1":1,"C2":49,"C3":653,"C4":2770,"C5":1097},"respiratorio":0,"samu":19,"derivados_ueh":102,"ambulancias":158,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2024,"mes":"DICIEMBRE","mes_num":12,"inscritos":5076,"atendidos":4723,"nsp":353,"triage":{"C1":2,"C2":57,"C3":677,"C4":3636,"C5":272},"respiratorio":0,"samu":18,"derivados_ueh":95,"ambulancias":153,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"ENERO","mes_num":1,"inscritos":4259,"atendidos":4028,"nsp":231,"triage":{"C1":1,"C2":42,"C3":576,"C4":2428,"C5":981},"respiratorio":0,"samu":15,"derivados_ueh":88,"ambulancias":138,"hourly_inscritos":{"08:00":35,"09:00":52,"10:00":78,"11:00":98,"12:00":90,"13:00":70,"14:00":62,"15:00":74,"16:00":210,"17:00":890,"18:00":432,"19:00":318,"20:00":310,"21:00":365,"22:00":302,"23:00":238,"00:00":148,"01:00":92,"02:00":44,"03:00":38,"04:00":30,"05:00":38,"06:00":42,"07:00":18},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"FEBRERO","mes_num":2,"inscritos":3890,"atendidos":3680,"nsp":210,"triage":{"C1":1,"C2":38,"C3":526,"C4":2218,"C5":897},"respiratorio":0,"samu":13,"derivados_ueh":80,"ambulancias":126,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"MARZO","mes_num":3,"inscritos":4520,"atendidos":4270,"nsp":250,"triage":{"C1":1,"C2":45,"C3":610,"C4":2578,"C5":1036},"respiratorio":0,"samu":17,"derivados_ueh":95,"ambulancias":150,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"ABRIL","mes_num":4,"inscritos":4280,"atendidos":4040,"nsp":240,"triage":{"C1":1,"C2":43,"C3":577,"C4":2442,"C5":977},"respiratorio":0,"samu":16,"derivados_ueh":91,"ambulancias":144,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"MAYO","mes_num":5,"inscritos":4680,"atendidos":4420,"nsp":260,"triage":{"C1":1,"C2":47,"C3":632,"C4":2671,"C5":1069},"respiratorio":0,"samu":18,"derivados_ueh":100,"ambulancias":158,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"JUNIO","mes_num":6,"inscritos":4450,"atendidos":4200,"nsp":250,"triage":{"C1":1,"C2":44,"C3":600,"C4":2540,"C5":1015},"respiratorio":0,"samu":17,"derivados_ueh":95,"ambulancias":150,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"JULIO","mes_num":7,"inscritos":4780,"atendidos":4510,"nsp":270,"triage":{"C1":1,"C2":48,"C3":645,"C4":2730,"C5":1086},"respiratorio":0,"samu":19,"derivados_ueh":103,"ambulancias":162,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"AGOSTO","mes_num":8,"inscritos":4550,"atendidos":4290,"nsp":260,"triage":{"C1":1,"C2":45,"C3":613,"C4":2601,"C5":1030},"respiratorio":0,"samu":17,"derivados_ueh":98,"ambulancias":154,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":4330,"atendidos":4090,"nsp":240,"triage":{"C1":1,"C2":43,"C3":583,"C4":2471,"C5":982},"respiratorio":0,"samu":16,"derivados_ueh":93,"ambulancias":147,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"OCTUBRE","mes_num":10,"inscritos":4750,"atendidos":4480,"nsp":270,"triage":{"C1":1,"C2":48,"C3":640,"C4":2710,"C5":1081},"respiratorio":0,"samu":18,"derivados_ueh":102,"ambulancias":160,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"NOVIEMBRE","mes_num":11,"inscritos":4460,"atendidos":4210,"nsp":250,"triage":{"C1":1,"C2":45,"C3":600,"C4":2544,"C5":1020},"respiratorio":0,"samu":17,"derivados_ueh":97,"ambulancias":152,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2025,"mes":"DICIEMBRE","mes_num":12,"inscritos":3867,"atendidos":3638,"nsp":231,"triage":{"C1":0,"C2":38,"C3":522,"C4":2843,"C5":235},"respiratorio":0,"samu":14,"derivados_ueh":85,"ambulancias":135,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"ENERO","mes_num":1,"inscritos":4064,"atendidos":3848,"nsp":216,"triage":{"C1":1,"C2":39,"C3":530,"C4":2325,"C5":953},"respiratorio":0,"samu":14,"derivados_ueh":88,"ambulancias":140,"hourly_inscritos":{"08:00":63,"09:00":82,"10:00":108,"11:00":195,"12:00":180,"13:00":148,"14:00":125,"15:00":145,"16:00":285,"17:00":728,"18:00":398,"19:00":295,"20:00":280,"21:00":320,"22:00":268,"23:00":208,"00:00":130,"01:00":82,"02:00":40,"03:00":35,"04:00":28,"05:00":32,"06:00":38,"07:00":14},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"FEBRERO","mes_num":2,"inscritos":3520,"atendidos":3330,"nsp":190,"triage":{"C1":1,"C2":34,"C3":474,"C4":2014,"C5":817},"respiratorio":0,"samu":12,"derivados_ueh":76,"ambulancias":120,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"MARZO","mes_num":3,"inscritos":3159,"atendidos":3062,"nsp":97,"triage":{"C1":0,"C2":27,"C3":384,"C4":2192,"C5":428},"respiratorio":0,"samu":10,"derivados_ueh":65,"ambulancias":108,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"ABRIL","mes_num":4,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"MAYO","mes_num":5,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"JUNIO","mes_num":6,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"JULIO","mes_num":7,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"AGOSTO","mes_num":8,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"SEPTIEMBRE","mes_num":9,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"OCTUBRE","mes_num":10,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"NOVIEMBRE","mes_num":11,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}},{"a\u00f1o":2026,"mes":"DICIEMBRE","mes_num":12,"inscritos":0,"atendidos":0,"nsp":0,"triage":{"C1":0,"C2":0,"C3":0,"C4":0,"C5":0},"respiratorio":0,"samu":0,"derivados_ueh":0,"ambulancias":0,"hourly_inscritos":{},"hourly_atendidos":{}}]};
 
 const MESES_ES = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-const MESES_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-const YEARS = [...new Set(RAW_DATA.map(d=>d.anio))].sort();
-const COLORS = ['#1f6feb','#3fb950','#d29922','#f85149','#e3b341','#58a6ff','#56d364','#ffa657','#ff7b72','#79c0ff'];
-const GRAD_COLORS = ['rgba(31,111,235,0.15)','rgba(63,185,80,0.15)','rgba(210,153,34,0.15)','rgba(248,81,73,0.15)','rgba(227,179,65,0.15)'];
-
-let activeYears = [...YEARS];
-let activeMes = 'all';
+const COLORS = ['#0ea5e9','#10b981','#f59e0b','#ef4444','#a855f7','#ec4899','#14b8a6','#f97316'];
 let charts = {};
-let compMesSelected = 'JULIO';
+let currentPage = 1;
+const PER_PAGE = 20;
+let sortCol = null, sortDir = 1;
+let selectedYears = [2024, 2025];
 
-// ===== DATETIME =====
-function updateClock(){
-  const now = new Date();
-  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const months = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  document.getElementById('dateDisplay').textContent = `${days[now.getDay()]} ${now.getDate()} de ${months[now.getMonth()]} ${now.getFullYear()}`;
-  document.getElementById('timeDisplay').textContent = now.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
-}
-setInterval(updateClock, 1000);
-updateClock();
-
-// ===== CHART HELPERS =====
-const chartDefaults = {
-  responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12 } }, tooltip: { backgroundColor: '#1c2230', borderColor: '#30363d', borderWidth: 1, titleColor: '#e6edf3', bodyColor: '#c9d1d9', padding: 10 } },
-  scales: {
-    x: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: 'rgba(48,54,61,0.5)' } },
-    y: { ticks: { color: '#8b949e', font: { size: 10 } }, grid: { color: 'rgba(48,54,61,0.5)' } }
-  }
+// ========================
+// INIT
+// ========================
+window.onload = () => {
+  DB = DATOS_EMBEDDED;
+  initClock();
+  initFilters();
+  document.getElementById('ultima-act').textContent = DB.meta.ultima_actualizacion.replace('T',' ');
+  renderResumen();
+  renderComparativa();
 };
 
-function makeChart(id, type, data, opts={}){
-  if(charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, { type, data, options: { ...chartDefaults, ...opts } });
+// ========================
+// CLOCK
+// ========================
+function initClock(){
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  setInterval(()=>{
+    const n = new Date();
+    document.getElementById('clock').textContent = n.toLocaleTimeString('es-CL');
+    document.getElementById('clock-date').textContent = `${dias[n.getDay()]} ${n.getDate()} ${meses[n.getMonth()]} ${n.getFullYear()}`;
+  },1000);
 }
 
-function gradFill(ctx, color){
-  const g = ctx.createLinearGradient(0,0,0,300);
-  g.addColorStop(0, color.replace(')',',0.4)').replace('rgb','rgba'));
-  g.addColorStop(1, color.replace(')',',0)').replace('rgb','rgba'));
-  return g;
-}
-
-// ===== FILTERS =====
-function buildFilters(){
-  const yb = document.getElementById('yearBtns');
-  yb.innerHTML = '';
-  YEARS.forEach(y=>{
-    const b = document.createElement('button');
-    b.className = 'multi-btn' + (activeYears.includes(y)?' active':'');
-    b.textContent = y;
-    b.onclick = ()=>{ toggleYear(y); };
-    yb.appendChild(b);
+// ========================
+// FILTERS INIT
+// ========================
+function initFilters(){
+  const años = [...new Set(DB.registros.map(r=>r.año))].sort();
+  ['f1-año','f2-año','f4-año','f5-año'].forEach(id=>{
+    const s = document.getElementById(id);
+    años.forEach(a=>{ const o=document.createElement('option');o.value=a;o.textContent=a;s.appendChild(o); });
   });
-  const ms = document.getElementById('mesFilter');
-  ms.innerHTML = '<option value="all">Todos</option>';
-  MESES_ES.forEach((m,i)=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; if(m===activeMes) o.selected=true; ms.appendChild(o); });
-
-  const hmY = document.getElementById('hmYear');
-  hmY.innerHTML = '';
-  YEARS.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=y; hmY.appendChild(o); });
-  hmY.value = YEARS[YEARS.length-1];
-
-  const hmM = document.getElementById('hmMes');
-  hmM.innerHTML = '';
-  MESES_ES.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; hmM.appendChild(o); });
-  hmM.value = 'ENERO';
-
-  buildCompSelector();
+  MESES_ES.forEach((m,i)=>{
+    ['f1-mes','f2-mes','f4-mes','f5-mes'].forEach(id=>{
+      const s=document.getElementById(id);
+      const o=document.createElement('option');o.value=i+1;o.textContent=m;s.appendChild(o);
+    });
+  });
+  // Year checkboxes for comparativa
+  const grid = document.getElementById('year-checks');
+  años.forEach(a=>{
+    const d=document.createElement('label');
+    d.className='year-check'+(selectedYears.includes(a)?' selected':'');
+    d.innerHTML=`<input type="checkbox" ${selectedYears.includes(a)?'checked':''} onchange="toggleYear(${a},this)"> ${a}`;
+    grid.appendChild(d);
+  });
 }
 
-function toggleYear(y){
-  if(activeYears.includes(y)){
-    if(activeYears.length<=1) return;
-    activeYears = activeYears.filter(x=>x!==y);
-  } else { activeYears.push(y); activeYears.sort(); }
-  buildFilters();
-  applyFilters();
+function toggleYear(year,el){
+  if(el.checked){ if(!selectedYears.includes(year)) selectedYears.push(year); }
+  else { selectedYears = selectedYears.filter(y=>y!==year); }
+  if(selectedYears.length<2){ selectedYears.push(year); el.checked=true; }
+  if(selectedYears.length>5){ selectedYears.shift(); }
+  document.querySelectorAll('.year-check').forEach(lbl=>{
+    const inp=lbl.querySelector('input');
+    lbl.classList.toggle('selected', inp.checked);
+  });
+  renderComparativa();
 }
 
-function applyFilters(){
-  activeMes = document.getElementById('mesFilter').value;
-  renderAll();
+// ========================
+// TABS
+// ========================
+function switchTab(name,el){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  el.classList.add('active');
+  if(name==='resumen') renderResumen();
+  if(name==='periodo') renderPeriodo();
+  if(name==='comparativa') renderComparativa();
+  if(name==='top5') renderTop();
+  if(name==='datos') renderDatos();
 }
 
-function resetFilters(){
-  activeYears = [...YEARS];
-  activeMes = 'all';
-  document.getElementById('mesFilter').value = 'all';
-  buildFilters();
-  renderAll();
+// ========================
+// HELPERS
+// ========================
+function filtrar(fYear,fMes){
+  return DB.registros.filter(r=>{
+    if(fYear!=='all' && r.año!=fYear) return false;
+    if(fMes!=='all' && r.mes_num!=fMes) return false;
+    if(r.inscritos===0 && r.atendidos===0) return false;
+    return true;
+  });
+}
+function sumar(arr,key){ return arr.reduce((s,r)=>s+(r[key]||0),0); }
+function fmt(n){ return n.toLocaleString('es-CL'); }
+function pct(a,b){ return b?((a/b)*100).toFixed(1)+'%':'—'; }
+function delta(cur,prev){ if(!prev||prev===0) return null; return ((cur-prev)/prev*100).toFixed(1); }
+function arrowHTML(d){ if(d===null) return ''; return d>0?`<span class="up">↑${d}%</span>`:`<span class="down">↓${Math.abs(d)}%</span>`; }
+function destroyChart(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+function makeChart(id,type,labels,datasets,opts={}){
+  destroyChart(id);
+  const isDark = !document.body.classList.contains('light');
+  const gc = opts.gridColor || (isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)');
+  const tc = isDark?'#94a3b8':'#64748b';
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx,{
+    type,
+    data:{labels,datasets},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      animation:{duration:500},
+      plugins:{
+        legend:{labels:{color:tc,font:{family:'Outfit',size:11},boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.dataset.label||''}: ${fmt(Math.round(ctx.raw))}`}}
+      },
+      scales: type==='doughnut'||type==='pie'?{}:{
+        x:{grid:{color:gc},ticks:{color:tc,font:{family:'Outfit',size:10}},..opts.x||{}},
+        y:{grid:{color:gc},ticks:{color:tc,font:{family:'Outfit',size:10},callback:v=>fmt(v)},..opts.y||{}}
+      },
+      ...opts.extra||{}
+    }
+  });
 }
 
-// ===== DATA HELPERS =====
-function getFiltered(){
-  return RAW_DATA.filter(d=> activeYears.includes(d.anio) && (activeMes==='all'||d.mes===activeMes));
+// ========================
+// TAB 1: RESUMEN
+// ========================
+function renderResumen(){
+  const fYear = document.getElementById('f1-año').value;
+  const fMes = document.getElementById('f1-mes').value;
+  const data = filtrar(fYear, fMes);
+  if(!data.length){ document.getElementById('kpi-resumen').innerHTML='<div class="alert">Sin datos para el período seleccionado</div>'; return; }
+
+  const ins = sumar(data,'inscritos'), ate = sumar(data,'atendidos'), nsp = sumar(data,'nsp');
+  const c1=data.reduce((s,r)=>s+r.triage.C1,0), c2=data.reduce((s,r)=>s+r.triage.C2,0);
+  const c3=data.reduce((s,r)=>s+r.triage.C3,0), c4=data.reduce((s,r)=>s+r.triage.C4,0), c5=data.reduce((s,r)=>s+r.triage.C5,0);
+
+  // Compare with previous year
+  let prevData = null;
+  if(fYear!=='all'){
+    prevData = filtrar(String(parseInt(fYear)-1), fMes);
+  }
+  const prevIns = prevData ? sumar(prevData,'inscritos') : 0;
+  const prevAte = prevData ? sumar(prevData,'atendidos') : 0;
+  const prevNsp = prevData ? sumar(prevData,'nsp') : 0;
+
+  const kpis = [
+    {icon:'👥',label:'Total Inscritos',value:fmt(ins),sub:arrowHTML(prevIns?delta(ins,prevIns):null)+(prevIns?` vs ${fmt(prevIns)} año ant.`:''),color:'var(--accent)'},
+    {icon:'✅',label:'Pacientes Atendidos',value:fmt(ate),sub:arrowHTML(prevAte?delta(ate,prevAte):null)+` (${pct(ate,ins)} de inscritos)`,color:'var(--accent2)'},
+    {icon:'❌',label:'NSP (No se presentaron)',value:fmt(nsp),sub:`${pct(nsp,ins)} de inscritos | ${arrowHTML(prevNsp?delta(nsp,prevNsp):null)}`,color:'var(--accent4)'},
+    {icon:'🔴',label:'Críticos C1+C2',value:fmt(c1+c2),sub:`${pct(c1+c2,ate)} del total atendidos`,color:'var(--accent5)'},
+    {icon:'🟡',label:'Urgencia C3',value:fmt(c3),sub:`${pct(c3,ate)} del total`,color:'var(--accent3)'},
+    {icon:'🟢',label:'Menos Urgente C4+C5',value:fmt(c4+c5),sub:`${pct(c4+c5,ate)} del total`,color:'var(--accent2)'},
+  ];
+  document.getElementById('kpi-resumen').innerHTML = kpis.map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-icon">${k.icon}</div>
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value" style="color:${k.color}">${k.value}</div>
+      <div class="kpi-sub neutral">${k.sub}</div>
+    </div>`).join('');
+
+  // Chart 1: Monthly bars
+  if(fYear!=='all'){
+    const mData = MESES_ES.map(m=>{ const r=data.find(x=>x.mes===m); return r||{inscritos:0,atendidos:0,nsp:0}; });
+    makeChart('chart-mensual','bar',MESES_ES.map(m=>m.slice(0,3)),[
+      {label:'Inscritos',data:mData.map(r=>r.inscritos),backgroundColor:'rgba(14,165,233,.7)',borderRadius:4},
+      {label:'Atendidos',data:mData.map(r=>r.atendidos),backgroundColor:'rgba(16,185,129,.7)',borderRadius:4},
+      {label:'NSP',data:mData.map(r=>r.nsp),backgroundColor:'rgba(239,68,68,.6)',borderRadius:4},
+    ]);
+  } else {
+    const años = [...new Set(data.map(r=>r.año))].sort();
+    const anualIns = años.map(a=>data.filter(r=>r.año===a).reduce((s,r)=>s+r.inscritos,0));
+    const anualAte = años.map(a=>data.filter(r=>r.año===a).reduce((s,r)=>s+r.atendidos,0));
+    makeChart('chart-mensual','bar',años.map(String),[
+      {label:'Inscritos',data:anualIns,backgroundColor:'rgba(14,165,233,.7)',borderRadius:4},
+      {label:'Atendidos',data:anualAte,backgroundColor:'rgba(16,185,129,.7)',borderRadius:4},
+    ]);
+  }
+
+  // Chart 2: Tendencia anual
+  const años = [...new Set(DB.registros.map(r=>r.año))].sort();
+  const totIns = años.map(a=>DB.registros.filter(r=>r.año===a).reduce((s,r)=>s+r.inscritos,0));
+  const totAte = años.map(a=>DB.registros.filter(r=>r.año===a).reduce((s,r)=>s+r.atendidos,0));
+  makeChart('chart-tendencia','line',años.map(String),[
+    {label:'Inscritos',data:totIns,borderColor:'#0ea5e9',backgroundColor:'rgba(14,165,233,.1)',tension:.4,fill:true,pointRadius:4},
+    {label:'Atendidos',data:totAte,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.1)',tension:.4,fill:true,pointRadius:4},
+  ]);
+
+  // Chart 3: Triage dona
+  makeChart('chart-triage-dona','doughnut',['C1','C2','C3','C4','C5'],[{
+    data:[c1,c2,c3,c4,c5],
+    backgroundColor:['#7c3aed','#ef4444','#f59e0b','#0ea5e9','#10b981'],
+    borderWidth:2,borderColor:'var(--bg-card)'
+  }],{extra:{plugins:{legend:{position:'right'}}}});
+
+  // Chart 4: Hourly
+  const HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00'];
+  const hourIns = {}; HOURS.forEach(h=>hourIns[h]=0);
+  data.forEach(r=>{ Object.entries(r.hourly_inscritos||{}).forEach(([h,v])=>{ if(h in hourIns) hourIns[h]+=v; }); });
+  const hVals = HOURS.map(h=>hourIns[h]);
+  const hColors = HOURS.map(h=>{
+    const hh=parseInt(h.split(':')[0]);
+    if(hh>=8&&hh<17) return 'rgba(14,165,233,.75)';
+    if(hh>=17&&hh<24) return 'rgba(245,158,11,.75)';
+    return 'rgba(239,68,68,.65)';
+  });
+  makeChart('chart-horario','bar',HOURS,[{label:'Inscritos por hora',data:hVals,backgroundColor:hColors,borderRadius:3}],
+    {extra:{plugins:{legend:{display:false}}}});
 }
 
-function getTotalByYear(data){
-  const r={};
-  data.forEach(d=>{ r[d.anio]=(r[d.anio]||0)+d.total_inscritos; });
-  return r;
-}
+// ========================
+// TAB 2: POR PERÍODO
+// ========================
+function renderPeriodo(){
+  const fYear = document.getElementById('f2-año').value;
+  const fMes = document.getElementById('f2-mes').value;
+  const data = filtrar(fYear, fMes);
+  if(!data.length){ document.getElementById('kpi-periodo').innerHTML='<div class="alert">Sin datos</div>'; return; }
 
-function getHourlyTotal(data){
-  const r={};
-  for(let h=0;h<24;h++) r[h]=0;
-  data.forEach(d=>{ Object.entries(d.por_hora).forEach(([h,v])=>{ r[parseInt(h)]=(r[parseInt(h)]||0)+(v||0); }); });
-  return r;
-}
+  const ins=sumar(data,'inscritos'), ate=sumar(data,'atendidos'), nsp=sumar(data,'nsp');
+  const samu=sumar(data,'samu'), der=sumar(data,'derivados_ueh'), amb=sumar(data,'ambulancias');
 
-function getMonthlyByYear(data){
-  const r={};
-  YEARS.forEach(y=>{ r[y]=new Array(12).fill(null); });
-  data.forEach(d=>{ if(r[d.anio]) r[d.anio][d.mes_num-1]=d.total_inscritos; });
-  return r;
-}
-
-// ===== KPIs =====
-function renderKPIs(){
-  const filt = getFiltered();
-  const total = filt.reduce((s,d)=>s+d.total_inscritos,0);
-  const byYear = getTotalByYear(filt);
-  const years = Object.keys(byYear).sort();
-  const lastYearTotal = byYear[years[years.length-1]]||0;
-  const prevYearTotal = byYear[years[years.length-2]]||0;
-  const delta = prevYearTotal ? ((lastYearTotal-prevYearTotal)/prevYearTotal*100) : 0;
-
-  // Total months
-  const totalMonths = filt.length || 1;
-  const avgMonth = Math.round(total/totalMonths);
-
-  // Hora peak
-  const hourly = getHourlyTotal(filt);
-  const peakHour = Object.entries(hourly).sort((a,b)=>b[1]-a[1])[0];
-  const peakHourLabel = `${String(parseInt(peakHour[0])).padStart(2,'0')}:00`;
-
-  // Max month
-  let maxRec=filt.reduce((m,d)=>d.total_inscritos>m.total_inscritos?d:m, {total_inscritos:0,mes:'—',anio:''});
-
-  // Daily avg
-  const totalDays = filt.reduce((s,d)=>s+Object.keys(d.por_dia).length,0)||1;
-  const avgDay = Math.round(total/totalDays);
+  let prevData=[];
+  if(fYear!=='all') prevData = filtrar(String(parseInt(fYear)-1), fMes);
+  const pIns=prevData.length?sumar(prevData,'inscritos'):0;
+  const pAte=prevData.length?sumar(prevData,'atendidos'):0;
 
   const kpis=[
-    { label:'Total Atenciones', value: total.toLocaleString('es-CL'), sub: `Período seleccionado`, cls:'kpi-blue', delta: delta!==0?`${delta>0?'▲':'▼'} ${Math.abs(delta).toFixed(1)}% vs año anterior`:'' , deltaClass: delta>=0?'up':'down'},
-    { label:'Promedio Mensual', value: avgMonth.toLocaleString('es-CL'), sub:'Atenciones/mes promedio', cls:'kpi-green'},
-    { label:'Promedio Diario', value: avgDay.toLocaleString('es-CL'), sub:'Atenciones/día promedio', cls:'kpi-yellow'},
-    { label:'Hora Peak', value: peakHourLabel, sub:`${peakHour[1].toLocaleString('es-CL')} atenciones acum.`, cls:'kpi-orange'},
-    { label:'Mes Crítico', value: maxRec.mes.substring(0,3)+' '+maxRec.anio, sub:`${maxRec.total_inscritos.toLocaleString('es-CL')} atenciones`, cls:'kpi-red'},
-    { label:'Años Analizados', value: activeYears.length, sub: activeYears.join(' · '), cls:'kpi-blue'},
+    {icon:'👥',label:'Inscritos',value:fmt(ins),sub:arrowHTML(pIns?delta(ins,pIns):null)},
+    {icon:'✅',label:'Atendidos',value:fmt(ate),sub:`${pct(ate,ins)} de inscritos ${arrowHTML(pAte?delta(ate,pAte):null)}`},
+    {icon:'❌',label:'NSP',value:fmt(nsp),sub:`${pct(nsp,ins)} ausentismo`},
+    {icon:'🚑',label:'SAMU traídos',value:fmt(samu),sub:'Derivaciones SAMU'},
+    {icon:'🏥',label:'Derivados a UEH',value:fmt(der),sub:'Referidos a urgencia hosp.'},
+    {icon:'🚐',label:'Salidas Ambulancia',value:fmt(amb),sub:'Despachos móviles'},
   ];
-
-  document.getElementById('kpiGrid').innerHTML = kpis.map(k=>`
-    <div class="kpi-card ${k.cls}">
+  document.getElementById('kpi-periodo').innerHTML = kpis.map(k=>`
+    <div class="kpi-card">
+      <div class="kpi-icon">${k.icon}</div>
       <div class="kpi-label">${k.label}</div>
       <div class="kpi-value">${k.value}</div>
-      ${k.delta?`<div class="kpi-delta ${k.deltaClass}">${k.delta}</div>`:''}
-      <div class="kpi-sub">${k.sub}</div>
+      <div class="kpi-sub neutral">${k.sub}</div>
     </div>`).join('');
+
+  const sorted = [...data].sort((a,b)=>a.año-b.año||a.mes_num-b.mes_num);
+  const rows = sorted.map(r=>`<tr>
+    <td><b>${r.año}</b></td>
+    <td>${r.mes}</td>
+    <td>${fmt(r.inscritos)}</td>
+    <td>${fmt(r.atendidos)}</td>
+    <td style="color:var(--accent4)">${fmt(r.nsp)}</td>
+    <td>${pct(r.atendidos,r.inscritos)}</td>
+    <td>${pct(r.nsp,r.inscritos)}</td>
+    <td><span class="badge badge-c3">${fmt(r.triage.C3)}</span> <span class="badge badge-c4">${fmt(r.triage.C4)}</span> <span class="badge badge-c5">${fmt(r.triage.C5)}</span></td>
+  </tr>`).join('');
+  document.getElementById('tabla-periodo').innerHTML=`<table>
+    <thead><tr><th>Año</th><th>Mes</th><th>Inscritos</th><th>Atendidos</th><th>NSP</th><th>% Ate.</th><th>% NSP</th><th>Triage</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
-// ===== ALERTS =====
-function renderAlerts(){
-  const filt = getFiltered();
-  const alerts=[];
-  const byYear = getTotalByYear(filt);
-  const years = Object.keys(byYear).map(Number).sort();
+// ========================
+// TAB 3: COMPARATIVA
+// ========================
+function renderComparativa(){
+  const metrica = document.getElementById('f3-metrica').value;
+  const label = {inscritos:'Inscritos',atendidos:'Atendidos',nsp:'NSP'}[metrica];
+  const años = [...selectedYears].sort();
+  if(años.length<2) return;
 
-  if(years.length>=2){
-    const last = byYear[years[years.length-1]];
-    const prev = byYear[years[years.length-2]];
-    if(prev && last){
-      const chg = (last-prev)/prev*100;
-      if(chg<-10) alerts.push({ type:'red', icon:'🔴', msg:`<strong>ALERTA DEMANDA:</strong> Caída del ${Math.abs(chg).toFixed(1)}% en ${years[years.length-1]} vs ${years[years.length-2]}. Revisar apertura de turnos y disponibilidad.`});
-      else if(chg>10) alerts.push({ type:'red', icon:'🔴', msg:`<strong>ALERTA SATURACIÓN:</strong> Aumento del ${chg.toFixed(1)}% en ${years[years.length-1]} vs ${years[years.length-2]}. Considerar refuerzo de personal.`});
-    }
-  }
+  // KPIs: best/worst/avg
+  const totales = años.map(a=>({año:a, val:DB.registros.filter(r=>r.año===a&&r.inscritos>0).reduce((s,r)=>s+(r[metrica]||0),0)}));
+  const best = totales.reduce((a,b)=>a.val>b.val?a:b);
+  const worst = totales.reduce((a,b)=>a.val<b.val?a:b);
+  const avg = Math.round(totales.reduce((s,t)=>s+t.val,0)/totales.length);
 
-  // Peak hour warning
-  const hourly = getHourlyTotal(filt);
-  const totalFilt = filt.reduce((s,d)=>s+d.total_inscritos,0);
-  const peakH = Object.entries(hourly).sort((a,b)=>b[1]-a[1])[0];
-  const peakPct = totalFilt>0?(peakH[1]/totalFilt*100):0;
-  if(peakPct>12) alerts.push({ type:'yellow', icon:'⚠️', msg:`<strong>HORA CRÍTICA:</strong> Las ${String(parseInt(peakH[0])).padStart(2,'0')}:00 concentra el ${peakPct.toFixed(1)}% de todas las atenciones. Reforzar personal en este tramo.`});
+  document.getElementById('kpi-comparativa').innerHTML=`
+    <div class="kpi-card"><div class="kpi-icon">🏆</div><div class="kpi-label">Mejor Año</div><div class="kpi-value up">${best.año}</div><div class="kpi-sub">${fmt(best.val)} ${label}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📉</div><div class="kpi-label">Menor Actividad</div><div class="kpi-value down">${worst.año}</div><div class="kpi-sub">${fmt(worst.val)} ${label}</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📊</div><div class="kpi-label">Promedio Anual</div><div class="kpi-value">${fmt(avg)}</div><div class="kpi-sub">${label} / año</div></div>
+    <div class="kpi-card"><div class="kpi-icon">📅</div><div class="kpi-label">Años Comparados</div><div class="kpi-value">${años.length}</div><div class="kpi-sub">${años.join(', ')}</div></div>
+  `;
 
-  // Winter projection
-  const winterMonths = filt.filter(d=>[5,6,7,8].includes(d.mes_num));
-  const nonWinter = filt.filter(d=>![5,6,7,8].includes(d.mes_num));
-  if(winterMonths.length>0 && nonWinter.length>0){
-    const avgW = winterMonths.reduce((s,d)=>s+d.total_inscritos,0)/winterMonths.length;
-    const avgN = nonWinter.reduce((s,d)=>s+d.total_inscritos,0)/nonWinter.length;
-    const diff = (avgW-avgN)/avgN*100;
-    if(Math.abs(diff)>5){
-      const msg = diff>0 ? `<strong>CAMPAÑA INVIERNO:</strong> Mayo–Agosto registra un ${diff.toFixed(1)}% más de atenciones. Activar plan de contingencia invernal.`
-                        : `<strong>CAMPAÑA INVIERNO:</strong> Invierno registra ${Math.abs(diff).toFixed(1)}% menos que el resto del año en el período seleccionado.`;
-      alerts.push({ type: diff>0?'yellow':'green', icon: diff>0?'❄️':'✅', msg });
-    }
-  }
-
-  if(alerts.length===0) alerts.push({ type:'green', icon:'✅', msg:`<strong>SIN ALERTAS ACTIVAS:</strong> Demanda dentro de parámetros normales para el período seleccionado.`});
-
-  document.getElementById('alertsBox').innerHTML = alerts.map(a=>
-    `<div class="alert alert-${a.type}"><span class="alert-icon">${a.icon}</span><span class="alert-text">${a.msg}</span></div>`
-  ).join('');
-}
-
-// ===== CHART: TREND =====
-function renderTrend(){
-  const filt = getFiltered();
-  const byYear = getTotalByYear(filt);
-  const labels = Object.keys(byYear).sort();
-  const vals = labels.map(y=>byYear[y]);
-  const ctx = document.getElementById('chartTrend');
-  const gradient = ctx.getContext('2d').createLinearGradient(0,0,0,220);
-  gradient.addColorStop(0,'rgba(31,111,235,0.35)');
-  gradient.addColorStop(1,'rgba(31,111,235,0)');
-
-  document.getElementById('trendLabel').textContent = labels.join('–');
-  makeChart('chartTrend','line',{
-    labels,
-    datasets:[{
-      label:'Atenciones anuales',
-      data: vals,
-      borderColor:'#1f6feb',
-      backgroundColor: gradient,
-      tension:.35, fill:true, pointRadius:5, pointBackgroundColor:'#1f6feb', pointBorderColor:'#fff', pointBorderWidth:2
-    }]
-  },{ plugins:{ ...chartDefaults.plugins, legend:{display:false} } });
-}
-
-// ===== CHART: HOURLY CURVE =====
-function renderHoraria(){
-  const filt = getFiltered();
-  const hourly = getHourlyTotal(filt);
-  const ordered = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5,6,7];
-  const labels = ordered.map(h=>`${String(h).padStart(2,'0')}:00`);
-  const vals = ordered.map(h=>hourly[h]||0);
-  const maxIdx = vals.indexOf(Math.max(...vals));
-
-  const colors = vals.map((_,i)=> i===maxIdx?'#f85149':'rgba(31,111,235,0.7)');
-  const ctx = document.getElementById('chartHora');
-  document.getElementById('horaLabel').textContent = activeMes==='all'?'Consolidado':activeMes;
-  makeChart('chartHora','bar',{
-    labels,
-    datasets:[{ label:'Atenciones', data:vals, backgroundColor:colors, borderRadius:4 }]
-  },{ plugins:{ ...chartDefaults.plugins, legend:{display:false} },
-      scales:{ x:{ ticks:{color:'#8b949e',font:{size:9}}, grid:{color:'rgba(48,54,61,0.5)'} }, y:{...chartDefaults.scales.y} } });
-}
-
-// ===== CHART: MENSUAL MULTI-AÑO =====
-function renderMensual(){
-  const filt = getFiltered();
-  const byYear = getMonthlyByYear(filt);
-  const datasets = activeYears.filter(y=>byYear[y]).map((y,i)=>({
-    label: String(y),
-    data: byYear[y],
-    borderColor: COLORS[i%COLORS.length],
-    backgroundColor: 'transparent',
-    tension:.35, pointRadius:3, borderWidth:2
+  // Chart
+  const datasets = años.map((a,i)=>({
+    label: String(a),
+    data: MESES_ES.map(m=>{ const r=DB.registros.find(x=>x.año===a&&x.mes===m); return r?r[metrica]:0; }),
+    borderColor: COLORS[i], backgroundColor: COLORS[i]+'30',
+    tension:.4, fill:false, pointRadius:4,
   }));
-  makeChart('chartMensual','line',{ labels: MESES_SHORT, datasets },{
-    plugins:{ ...chartDefaults.plugins, legend:{ labels:{color:'#8b949e',font:{size:11},boxWidth:10} } }
+  makeChart('chart-comparativa','line',MESES_ES.map(m=>m.slice(0,3)),datasets);
+
+  // Table
+  const header = `<tr><th>Mes</th>${años.map(a=>`<th>${a}</th>`).join('')}<th>Mejor</th></tr>`;
+  const tRows = MESES_ES.map((m,mi)=>{
+    const vals = años.map(a=>{ const r=DB.registros.find(x=>x.año===a&&x.mes===m); return r?r[metrica]:0; });
+    const maxV = Math.max(...vals);
+    const cells = vals.map((v,i)=>`<td style="${v===maxV?'color:var(--accent2);font-weight:700':'''}">${fmt(v)}</td>`).join('');
+    const bestYear = años[vals.indexOf(maxV)];
+    return `<tr><td><b>${m.slice(0,3)}</b></td>${cells}<td style="color:var(--accent2);font-weight:700">${bestYear}</td></tr>`;
   });
+  const footVals = años.map(a=>{ const r=DB.registros.filter(x=>x.año===a&&x[metrica]>0); return fmt(r.reduce((s,x)=>s+x[metrica],0)); });
+  const foot = `<tr style="border-top:2px solid var(--border);font-weight:700"><td>TOTAL</td>${footVals.map(v=>`<td>${v}</td>`).join('')}<td>—</td></tr>`;
+  document.getElementById('tabla-comparativa').innerHTML=`<table><thead>${header}</thead><tbody>${tRows.join('')}${foot}</tbody></table>`;
 }
 
-// ===== COMP SELECTOR =====
-function buildCompSelector(){
-  const sel = document.getElementById('compMesSelector');
-  sel.innerHTML = MESES_ES.map(m=>`<button class="multi-btn${m===compMesSelected?' active':''}" onclick="selectCompMes('${m}')">${m.substring(0,3)}</button>`).join('');
-}
-function selectCompMes(mes){
-  compMesSelected=mes;
-  buildCompSelector();
-  renderComparador();
-}
+// ========================
+// TAB 4: TOP
+// ========================
+function renderTop(){
+  const fYear = document.getElementById('f4-año').value;
+  const fMes = document.getElementById('f4-mes').value;
+  const tipo = document.getElementById('f4-tipo').value;
+  const data = filtrar(fYear, fMes);
 
-// ===== CHART: COMPARADOR =====
-function renderComparador(){
-  const mesData = RAW_DATA.filter(d=>d.mes===compMesSelected && activeYears.includes(d.anio)).sort((a,b)=>a.anio-b.anio);
-  const labels = mesData.map(d=>String(d.anio));
-  const vals = mesData.map(d=>d.total_inscritos);
-  const ctx = document.getElementById('chartComp');
-  const gradient = ctx.getContext('2d').createLinearGradient(0,0,0,220);
-  gradient.addColorStop(0,'rgba(63,185,80,0.3)');
-  gradient.addColorStop(1,'rgba(63,185,80,0)');
-  makeChart('chartComp','bar',{
-    labels,
-    datasets:[{ label:`Atenciones – ${compMesSelected}`, data:vals, backgroundColor: vals.map((_,i)=>i===vals.indexOf(Math.max(...vals))?'#f85149':COLORS[0]), borderRadius:5 }]
-  },{ plugins:{...chartDefaults.plugins,legend:{display:false}} });
-}
-
-// ===== HEATMAP =====
-function renderHeatmap(){
-  const yr = parseInt(document.getElementById('hmYear').value);
-  const mes = document.getElementById('hmMes').value;
-  const rec = RAW_DATA.find(d=>d.anio===yr && d.mes===mes);
-  document.getElementById('heatmapLabel').textContent = `${mes} ${yr}`;
-
-  if(!rec){ document.getElementById('heatmapBox').innerHTML='<p style="color:var(--text2);padding:20px;">Sin datos para este período.</p>'; return; }
-
-  const hours = [8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5,6,7];
-  const days = Object.keys(rec.por_dia).map(Number).sort((a,b)=>a-b);
-
-  // Per-hour per-day: we only have hourly totals and daily totals.
-  // Estimate: hour_share * day_total
-  const hourlyTotal = getHourlyTotal([rec]);
-  const grandTotal = Object.values(hourlyTotal).reduce((s,v)=>s+v,0)||1;
-  const hourShare = {};
-  hours.forEach(h=>{ hourShare[h]=(hourlyTotal[h]||0)/grandTotal; });
-
-  const allVals = [];
-  const matrix = {};
-  hours.forEach(h=>{
-    matrix[h]={};
-    days.forEach(d=>{
-      const v = Math.round((rec.por_dia[d]||0)*hourShare[h]);
-      matrix[h][d]=v;
-      allVals.push(v);
-    });
-  });
-  const maxVal = Math.max(...allVals)||1;
-
-  function heatColor(v){
-    const t = v/maxVal;
-    if(t<0.2) return `rgba(28,34,48,${0.3+t*2})`;
-    if(t<0.5) return `rgba(21,101,192,${0.3+t})`;
-    if(t<0.8) return `rgba(230,100,50,${0.4+t*0.5})`;
-    return `rgba(248,81,73,${0.5+t*0.5})`;
+  let items=[], title='';
+  if(tipo==='inscritos'||tipo==='atendidos'){
+    const HOURS=['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00','20:00','21:00','22:00','23:00','00:00','01:00','02:00','03:00','04:00','05:00','06:00','07:00'];
+    const key = tipo==='inscritos'?'hourly_inscritos':'hourly_atendidos';
+    const acc={};HOURS.forEach(h=>acc[h]=0);
+    data.forEach(r=>Object.entries(r[key]||{}).forEach(([h,v])=>{if(h in acc)acc[h]+=v;}));
+    items=Object.entries(acc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({name:`Hora ${k}`,val:v}));
+    title=tipo==='inscritos'?'Top Horarios — Inscritos':'Top Horarios — Atendidos';
+  } else if(tipo==='triage'){
+    const acc={C1:0,C2:0,C3:0,C4:0,C5:0};
+    data.forEach(r=>Object.entries(r.triage).forEach(([k,v])=>acc[k]+=v));
+    items=Object.entries(acc).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({name:`Triage ${k}`,val:v}));
+    title='Distribución por Categoría Triage';
+  } else {
+    items=[
+      {name:'Inscritos',val:sumar(data,'inscritos')},
+      {name:'Atendidos',val:sumar(data,'atendidos')},
+      {name:'NSP',val:sumar(data,'nsp')},
+      {name:'SAMU Traídos',val:sumar(data,'samu')},
+      {name:'Derivados UEH',val:sumar(data,'derivados_ueh')},
+      {name:'Salidas Ambulancia',val:sumar(data,'ambulancias')},
+    ].sort((a,b)=>b.val-a.val);
+    title='Top Motivos / Categorías';
   }
 
-  let html = '<table class="heatmap-table"><thead><tr><th class="hm-label">Hora</th>';
-  days.forEach(d=>{ html+=`<th>${d}</th>`; });
-  html+='</tr></thead><tbody>';
-  hours.forEach(h=>{
-    html+=`<tr><td class="hm-label">${String(h).padStart(2,'0')}:00</td>`;
-    days.forEach(d=>{
-      const v=matrix[h][d];
-      html+=`<td style="background:${heatColor(v)};color:${v>maxVal*0.5?'#fff':'#8b949e'}" title="${String(h).padStart(2,'0')}:00 – Día ${d}: ~${v} atenc.">${v>0?v:''}</td>`;
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-  document.getElementById('heatmapBox').innerHTML=html;
-}
+  const top = items.slice(0,8).filter(x=>x.val>0);
+  if(!top.length){ document.getElementById('top5-contenido').innerHTML='<div class="alert">Sin datos de horario disponibles para el período seleccionado.</div>'; return; }
+  const maxV = top[0].val;
+  const rankNums=['1°','2°','3°','4°','5°','6°','7°','8°'];
+  const rankClasses=['r1','r2','r3','','','','',''];
+  const total = top.reduce((s,x)=>s+x.val,0);
 
-// ===== PROJECTION =====
-function renderProjection(){
-  const now = new Date();
-  const currentMesNum = now.getMonth()+1;
-  const MONTHS_AHEAD = 6;
-  const projMonths=[];
-  for(let i=1;i<=MONTHS_AHEAD;i++){
-    let mn = ((currentMesNum-1+i)%12)+1;
-    projMonths.push(mn);
-  }
-
-  const html = projMonths.map(mn=>{
-    const historical = RAW_DATA.filter(d=>d.mes_num===mn && activeYears.includes(d.anio));
-    if(historical.length===0) return '';
-    const avg = Math.round(historical.reduce((s,d)=>s+d.total_inscritos,0)/historical.length);
-    const max = Math.max(...historical.map(d=>d.total_inscritos));
-    const min = Math.min(...historical.map(d=>d.total_inscritos));
-    const isWinter = [5,6,7,8].includes(mn);
-    const isHigh = [6,7,8,9,10].includes(mn);
-    const tag = isWinter?'<span class="pm-tag tag-high">❄️ Invierno</span>': isHigh?'<span class="pm-tag tag-mid">⚠️ Alto</span>':'<span class="pm-tag tag-low">✅ Normal</span>';
-    return `<div class="proj-month">
-      <div class="pm-name">${MESES_ES[mn-1].substring(0,3).toUpperCase()}</div>
-      <div class="pm-val" style="color:${isWinter?'#f85149':isHigh?'#e3b341':'#3fb950'}">${avg.toLocaleString('es-CL')}</div>
-      <div style="font-size:9px;color:var(--text2);margin-bottom:4px;">Min:${min.toLocaleString('es-CL')} / Max:${max.toLocaleString('es-CL')}</div>
-      ${tag}
+  document.getElementById('top5-contenido').innerHTML=`
+    <div class="section-title">${title}</div>
+    <div class="rank-list">${top.map((item,i)=>`
+      <div class="rank-item">
+        <div class="rank-num ${rankClasses[i]}">${rankNums[i]}</div>
+        <div class="rank-info"><div class="rank-name">${item.name}</div><div class="kpi-sub neutral">${pct(item.val,total)} del total</div></div>
+        <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(item.val/maxV*100).toFixed(1)}%"></div></div>
+        <div class="rank-val">${fmt(item.val)}</div>
+      </div>`).join('')}
     </div>`;
-  }).join('');
-  document.getElementById('projGrid').innerHTML=html;
 }
 
-// ===== VARIACIÓN INTERANUAL =====
-function renderVariacion(){
-  const datasets = [];
-  for(let i=1;i<activeYears.length;i++){
-    const y1 = activeYears[i-1], y2 = activeYears[i];
-    const vals = MESES_ES.map(m=>{
-      const d1 = RAW_DATA.find(d=>d.anio===y1&&d.mes===m);
-      const d2 = RAW_DATA.find(d=>d.anio===y2&&d.mes===m);
-      if(!d1||!d2||d1.total_inscritos===0) return null;
-      return +((d2.total_inscritos-d1.total_inscritos)/d1.total_inscritos*100).toFixed(1);
-    });
-    datasets.push({ label:`${y1}→${y2}`, data:vals, borderColor:COLORS[i%COLORS.length], backgroundColor:'transparent', tension:.3, pointRadius:3, borderWidth:2 });
-  }
-  if(datasets.length===0) return;
-  makeChart('chartVariacion','line',{ labels:MESES_SHORT, datasets },{
-    plugins:{ ...chartDefaults.plugins },
-    scales:{
-      x:{ ticks:{color:'#8b949e',font:{size:10}}, grid:{color:'rgba(48,54,61,0.5)'} },
-      y:{ ticks:{color:'#8b949e',font:{size:10},callback:v=>v+'%'}, grid:{color:'rgba(48,54,61,0.5)'}, title:{display:true,text:'Variación %',color:'#8b949e',font:{size:10}} }
+// ========================
+// TAB 5: DATOS
+// ========================
+function renderDatos(){
+  const fYear=document.getElementById('f5-año').value;
+  const fMes=document.getElementById('f5-mes').value;
+  const busq=document.getElementById('busqueda').value.toLowerCase();
+  let data=filtrar(fYear,fMes);
+  if(busq) data=data.filter(r=>Object.values({año:r.año,mes:r.mes,inscritos:r.inscritos,atendidos:r.atendidos,nsp:r.nsp}).some(v=>String(v).toLowerCase().includes(busq)));
+
+  const total=data.length, pages=Math.ceil(total/PER_PAGE)||1;
+  if(currentPage>pages) currentPage=1;
+  const slice=data.slice((currentPage-1)*PER_PAGE, currentPage*PER_PAGE);
+
+  document.getElementById('datos-info').textContent=`Mostrando ${slice.length} de ${total} registros`;
+  const rows=slice.map(r=>`<tr>
+    <td><b>${r.año}</b></td><td>${r.mes}</td>
+    <td>${fmt(r.inscritos)}</td><td>${fmt(r.atendidos)}</td>
+    <td style="color:var(--accent4)">${fmt(r.nsp)}</td>
+    <td>${pct(r.atendidos,r.inscritos)}</td>
+    <td>${pct(r.nsp,r.inscritos)}</td>
+    <td><span class="badge badge-c1">C1:${r.triage.C1}</span> <span class="badge badge-c2">C2:${r.triage.C2}</span> <span class="badge badge-c3">C3:${r.triage.C3}</span></td>
+    <td><span class="badge badge-c4">C4:${r.triage.C4}</span> <span class="badge badge-c5">C5:${r.triage.C5}</span></td>
+    <td>${fmt(r.samu)}</td><td>${fmt(r.derivados_ueh)}</td>
+  </tr>`).join('');
+  document.getElementById('tabla-datos').innerHTML=`<table>
+    <thead><tr><th>Año</th><th>Mes</th><th>Inscritos</th><th>Atendidos</th><th>NSP</th><th>%Ate</th><th>%NSP</th><th>Triage C1-C3</th><th>Triage C4-C5</th><th>SAMU</th><th>Deriv.UEH</th></tr></thead>
+    <tbody>${rows||'<tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:20px">Sin resultados</td></tr>'}</tbody>
+  </table>`;
+
+  // Paginación
+  let pHTML='';
+  if(pages>1){
+    pHTML+=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+    for(let p=1;p<=pages;p++){
+      if(p===1||p===pages||Math.abs(p-currentPage)<=1) pHTML+=`<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`;
+      else if(Math.abs(p-currentPage)===2) pHTML+=`<span style="color:var(--text-dim)">…</span>`;
     }
-  });
-}
-
-// ===== INSIGHTS =====
-function renderInsights(){
-  const filt = getFiltered();
-  const hourly = getHourlyTotal(filt);
-  const totalFilt = filt.reduce((s,d)=>s+d.total_inscritos,0)||1;
-  const ordered = Object.entries(hourly).sort((a,b)=>b[1]-a[1]);
-  const peakH = ordered[0];
-  const peakPct = (peakH[1]/totalFilt*100).toFixed(1);
-
-  const byYear = getTotalByYear(filt);
-  const years = Object.keys(byYear).map(Number).sort();
-
-  let trend = '';
-  if(years.length>=2){
-    const l=byYear[years[years.length-1]], p=byYear[years[years.length-2]];
-    const d=(l-p)/p*100;
-    trend=`${d>=0?'▲':'▼'} ${Math.abs(d).toFixed(1)}% respecto a ${years[years.length-2]}`;
+    pHTML+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
   }
+  document.getElementById('paginacion').innerHTML=pHTML;
+}
+function goPage(p){ currentPage=p; renderDatos(); }
 
-  const peakDayMap = {};
-  filt.forEach(d=>{ Object.entries(d.por_dia).forEach(([day,v])=>{ const wd=0; peakDayMap[day]=(peakDayMap[day]||0)+(v||0); }); });
-  const peakDay = Object.entries(peakDayMap).sort((a,b)=>b[1]-a[1])[0];
-
-  const insights=[
-    { icon:'🕐', title:'Hora crítica de demanda', body:`Las <strong>${String(parseInt(peakH[0])).padStart(2,'0')}:00 hrs</strong> concentra el <strong>${peakPct}%</strong> de la demanda total. Reforzar con al menos 1 médico adicional en este horario.` },
-    { icon:'📅', title:'Día con mayor carga', body:`El día <strong>${peakDay?peakDay[0]:'—'}</strong> del mes es históricamente el de mayor demanda acumulada. Revisar rotación de turnos.` },
-    { icon:'📈', title:'Tendencia de demanda', body:`${trend || 'Seleccione al menos 2 años para calcular tendencia.'}. ${years.length>=2?'Considerar este patrón para planificación de RRHH.':''}` },
-    { icon:'❄️', title:'Campaña invierno', body:`Históricamente, <strong>Mayo–Agosto</strong> registra el peak de demanda. Activar Plan de Invierno con anticipación en <strong>Abril</strong>. Considerar aumentar turnos SAR y coordinar con UEH.` },
-    { icon:'👥', title:'Gestión de personal', body:`Distribuir recursos según curva horaria. Tramo <strong>17:00–22:00</strong> concentra la mayor carga. Reducción gradual desde 23:00. Mañanas con demanda baja (08:00–11:00).` },
-    { icon:'🔁', title:'Derivaciones y flujo', body:`Monitorear ratio NSP/Atendidos. Reducir tiempos de espera en categorización (C3–C5). Coordinar con CESFAM para derivaciones tempranas.` },
-  ];
-
-  document.getElementById('insightsBox').innerHTML = insights.map(ins=>`
-    <div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
-      <div style="font-size:20px;flex-shrink:0;">${ins.icon}</div>
-      <div>
-        <div style="font-weight:700;font-size:12px;color:var(--text3);margin-bottom:3px;">${ins.title}</div>
-        <div style="font-size:11px;color:var(--text2);line-height:1.6;">${ins.body}</div>
-      </div>
-    </div>`).join('');
+// ========================
+// EXPORT
+// ========================
+function exportarExcel(){
+  const fYear=document.getElementById('f5-año')?document.getElementById('f5-año').value:'all';
+  const fMes=document.getElementById('f5-mes')?document.getElementById('f5-mes').value:'all';
+  const data=filtrar(fYear,fMes);
+  const ws=XLSX.utils.json_to_sheet(data.map(r=>({
+    'Año':r.año,'Mes':r.mes,'Inscritos':r.inscritos,'Atendidos':r.atendidos,'NSP':r.nsp,
+    '% Atendidos':((r.atendidos/r.inscritos)*100).toFixed(1)+'%',
+    '% NSP':((r.nsp/r.inscritos)*100).toFixed(1)+'%',
+    'C1':r.triage.C1,'C2':r.triage.C2,'C3':r.triage.C3,'C4':r.triage.C4,'C5':r.triage.C5,
+    'SAMU':r.samu,'Derivados UEH':r.derivados_ueh,'Ambulancias':r.ambulancias
+  })));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'SAR_Datos');
+  const d=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,`SAR_datos_${d}.xlsx`);
 }
 
-// ===== RENDER ALL =====
-function renderAll(){
-  renderKPIs();
-  renderAlerts();
-  renderTrend();
-  renderHoraria();
-  renderMensual();
-  renderComparador();
-  renderHeatmap();
-  renderProjection();
-  renderVariacion();
-  renderInsights();
-}
-
-// ===== EXPORT EXCEL =====
-function exportExcel(){
-  const filt = getFiltered();
-  const rows = [['Año','Mes','Mes Nº','Total Inscritos']];
-  filt.forEach(d=>rows.push([d.anio, d.mes, d.mes_num, d.total_inscritos]));
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=[{wch:8},{wch:14},{wch:8},{wch:16}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Resumen Mensual');
-
-  const rows2=[['Hora',...MESES_ES]];
-  const hours=[8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,0,1,2,3,4,5,6,7];
-  hours.forEach(h=>{
-    const row=[`${String(h).padStart(2,'0')}:00`];
-    MESES_ES.forEach(m=>{
-      const recs = filt.filter(d=>d.mes===m);
-      row.push(recs.reduce((s,d)=>s+(d.por_hora[String(h)]||0),0));
-    });
-    rows2.push(row);
-  });
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows2), 'Distribución Horaria');
-  XLSX.writeFile(wb, `Dashboard_SAR_${new Date().toISOString().slice(0,10)}.xlsx`);
-}
-
-// ===== EXPORT PDF =====
-function exportPDF(){
-  window.print();
-}
-
-// ===== JSON MODAL =====
-function openModal(){ document.getElementById('modalOverlay').classList.add('show'); }
-function closeModal(){ document.getElementById('modalOverlay').classList.remove('show'); document.getElementById('modalError').style.display='none'; document.getElementById('pwdInput').value=''; }
-function verifyAndLoad(){
-  const pwd = document.getElementById('pwdInput').value;
-  if(pwd!=='Zoe2023@'){ document.getElementById('modalError').style.display='block'; return; }
-  const file = document.getElementById('jsonFileInput').files[0];
-  if(!file){ alert('Seleccione un archivo JSON primero.'); return; }
+// ========================
+// IMPORT JSON
+// ========================
+function abrirImportar(){ document.getElementById('modal-importar').classList.add('open'); }
+function importarJSON(){
+  const pass=document.getElementById('import-pass').value;
+  const file=document.getElementById('import-file').files[0];
+  const msg=document.getElementById('import-msg');
+  if(pass!=='Zoe2023@'){ msg.innerHTML='<span class="down">❌ Clave incorrecta</span>'; return; }
+  if(!file){ msg.innerHTML='<span class="down">❌ Seleccione un archivo JSON</span>'; return; }
   const reader=new FileReader();
   reader.onload=e=>{
     try{
-      const newData=JSON.parse(e.target.result);
-      RAW_DATA.length=0;
-      newData.forEach(d=>RAW_DATA.push(d));
-      YEARS.length=0;
-      [...new Set(RAW_DATA.map(d=>d.anio))].sort().forEach(y=>YEARS.push(y));
-      activeYears=[...YEARS];
-      activeMes='all';
-      buildFilters();
-      renderAll();
-      closeModal();
-    } catch(err){ alert('Error al procesar JSON: '+err.message); }
+      DB=JSON.parse(e.target.result);
+      msg.innerHTML='<span class="up">✅ JSON importado correctamente</span>';
+      setTimeout(()=>{ cerrarModal('modal-importar'); renderResumen(); },1200);
+    }catch(err){ msg.innerHTML='<span class="down">❌ JSON inválido: '+err.message+'</span>'; }
   };
   reader.readAsText(file);
 }
 
-// ===== INIT =====
-
-async function cargarJSONAutomatico(){
-  try{
-    const response = await fetch("sar_dashboard.json?v=" + Date.now(), { cache: "no-store" });
-    if(!response.ok) throw new Error("No se pudo leer sar_dashboard.json");
-    const data = await response.json();
-    if(Array.isArray(data) && data.length){
-      RAW_DATA = data;
-      console.log("✅ JSON cargado automáticamente desde sar_dashboard.json");
-    }else{
-      console.warn("⚠️ sar_dashboard.json no trae un arreglo válido. Se usarán datos internos.");
-    }
-  }catch(error){
-    console.warn("⚠️ No se pudo cargar el JSON automático. Se usarán datos internos.", error);
-  }
+// ========================
+// ACERCA
+// ========================
+function abrirAcerca(){
+  document.getElementById('acerca-content').innerHTML=`
+    <b>Sistema:</b> Dashboard SAR — Servicio de Atención de Urgencias<br>
+    <b>Versión:</b> ${DB.meta.version}<br>
+    <b>Autor:</b> ${DB.meta.autor}<br>
+    <b>Correo:</b> <a href="mailto:${DB.meta.correo}" style="color:var(--accent)">${DB.meta.correo}</a><br>
+    <b>Última actualización:</b> ${DB.meta.ultima_actualizacion}<br>
+    <b>Registros mensuales:</b> ${DB.meta.total_registros}<br>
+    <b>Años disponibles:</b> ${DB.meta.años_disponibles.join(', ')}<br><br>
+    <i>Datos procesados desde archivos Excel anuales (2019–2026). Dashboard desarrollado para soporte de decisiones directivas en salud primaria y urgencias.</i>
+  `;
+  document.getElementById('modal-acerca').classList.add('open');
 }
 
-(async () => {
-  await cargarJSONAutomatico();
-  buildFilters();
-  renderAll();
-})();
+function cerrarModal(id){ document.getElementById(id).classList.remove('open'); }
+window.addEventListener('click',e=>{ if(e.target.classList.contains('modal')) e.target.classList.remove('open'); });
+
+// ========================
+// REFRESH
+// ========================
+function actualizarDatos(){
+  const ico=document.getElementById('refresh-ico');
+  ico.innerHTML='<span class="spinner"></span>';
+  setTimeout(()=>{ ico.textContent='🔄'; renderResumen(); },800);
+}
+
+// ========================
+// THEME
+// ========================
+function toggleTheme(){
+  document.body.classList.toggle('light');
+  document.getElementById('theme-btn').textContent = document.body.classList.contains('light')?'🌙':'☀️';
+  Object.keys(charts).forEach(id=>{ if(charts[id]) charts[id].destroy(); delete charts[id]; });
+  const tab=document.querySelector('.tab.active');
+  const tabName=tab?.textContent.includes('Resumen')?'resumen':tab?.textContent.includes('Período')?'periodo':tab?.textContent.includes('Comparativa')?'comparativa':tab?.textContent.includes('Top')?'top5':'datos';
+  if(tabName==='resumen') renderResumen();
+  if(tabName==='comparativa') renderComparativa();
+}
 </script>
 </body>
 </html>
